@@ -3,6 +3,24 @@ import Phaser from 'phaser';
 import tilesImg from './assets/tilemaps/tiles/tmw_desert_spacing.png';
 import mapJson from './assets/tilemaps/maps/desert.json';
 
+import { connect, WalletConnection, keyStores } from 'near-api-js';
+
+let near;
+let walletConnection;
+
+async function connectNear() {
+    const APP_KEY_PREFIX = 'near-lands:'
+    near = await connect({
+        nodeUrl: 'https://rpc.mainnet.near.org',
+        walletUrl: 'https://wallet.near.org',
+        networkId: 'default',
+        keyStore: new keyStores.BrowserLocalStorageKeyStore(window.localStorage, APP_KEY_PREFIX)
+    })
+    walletConnection = new WalletConnection(near, APP_KEY_PREFIX)
+
+    Object.assign(window, { near, walletConnection});
+}
+
 var controls;
 var marker;
 var map;
@@ -131,3 +149,5 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+
+connectNear().catch(console.error);
