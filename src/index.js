@@ -53,11 +53,13 @@ class MyGame extends Phaser.Scene
         })
         const inventoryX = tiles.tileWidth;
         const inventoryY = this.cameras.main.height - this.inventoryMap.heightInPixels - tiles.tileHeight;
-        this.inventoryMap.createLayer(0, tiles, inventoryX, inventoryY);
+        this.inventoryLayer = this.inventoryMap.createLayer(0, tiles, inventoryX, inventoryY);
+        this.inventoryLayer.setScrollFactor(0);
 
         this.inventoryBorder = this.add.graphics();
         this.inventoryBorder.lineStyle(2, 0x000000, 1);
         this.inventoryBorder.strokeRect(inventoryX, inventoryY, this.inventoryMap.widthInPixels, this.inventoryMap.heightInPixels);
+        this.inventoryBorder.setScrollFactor(0);
 
         selectedTile = map.getTileAt(2, 3);
 
