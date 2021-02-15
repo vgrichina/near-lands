@@ -1,18 +1,18 @@
 const CHUNK_SIZE = 16;
 const CHUNK_COUNT = 5;
-const START_COLOR = "FFFFFF";
+const START_TILE_ID = "-1";
 
 @nearBindgen
 export class Chunk {
   nonce: i32;
-  rgb: string[][];
+  tiles: string[][];
 
   constructor() {
-    this.rgb = new Array<Array<string>>(CHUNK_SIZE);
+    this.tiles = new Array<Array<string>>(CHUNK_SIZE);
     for (let i = 0; i < CHUNK_SIZE; i++) {
-      this.rgb[i] = new Array<string>(CHUNK_SIZE);
+      this.tiles[i] = new Array<string>(CHUNK_SIZE);
       for (let j = 0; j < CHUNK_SIZE; j++) {
-        this.rgb[i][j] = START_COLOR;
+        this.tiles[i][j] = START_TILE_ID;
       }
     }
   }
@@ -24,12 +24,12 @@ export class Chunk {
     return 'chunk:' + cx.toString() + ':' + cy.toString();
   }
 
-  setPixel(x: i32, y: i32, rgb: string): void {
+  setTile(x: i32, y: i32, tileId: string): void {
     checkBounds(x, y);
     let ox = x % CHUNK_SIZE;
     let oy = y % CHUNK_SIZE;
     this.nonce++;
-    this.rgb[ox][oy] = rgb;
+    this.tiles[ox][oy] = tileId;
   }
 }
 

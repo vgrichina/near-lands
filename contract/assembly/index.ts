@@ -4,9 +4,9 @@ import { Chunk, ChunkMap } from "./model"
 
 // --- contract code goes below
 
-export function setPixel(x: i32, y: i32, rgb: string): void {
+export function setTile(x: i32, y: i32, tileId: string): void {
   let chunk = getChunk(x, y);
-  chunk.setPixel(x, y, rgb);
+  chunk.setTile(x, y, tileId);
   storage.setBytes(Chunk.key(x, y), chunk.encode());
   let map = _getMap();
   map.setChunk(x, y, chunk);
