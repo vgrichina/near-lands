@@ -4,10 +4,16 @@ import tilesImg from './assets/tilemaps/tiles/tmw_desert_spacing.png';
 import mapJson from './assets/tilemaps/maps/desert.json';
 
 import 'regenerator-runtime/runtime';
-import { connect, WalletConnection, keyStores } from 'near-api-js';
+import { connect, WalletConnection, keyStores, Contract, Account } from 'near-api-js';
 
 let near;
 let walletConnection;
+let account;
+let contract;
+
+const CONTRACT_NAME = 'lands.near';
+
+const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
 
 async function connectNear() {
     const APP_KEY_PREFIX = 'near-lands:'
@@ -19,7 +25,21 @@ async function connectNear() {
     })
     walletConnection = new WalletConnection(near, APP_KEY_PREFIX)
 
-    Object.assign(window, { near, walletConnection});
+    if (walletConnection.isSignedIn()) {
+        account = walletConnection.account();
+    } else {
+        account = new Account(near.connection, CONTRACT_NAME);
+    }
+
+    contract = new Contract(account, CONTRACT_NAME, {
+        viewMethods: ["getMap", "getChunk"],
+        changeMethods: ["setTile"],
+        sender: account.accountId
+    });
+
+    loadBoardAndDraw().catch(console.error);
+
+    Object.assign(window, { near, walletConnection, account, contract });
 }
 
 function $forEach(selector, fn) {
@@ -40,7 +60,7 @@ const connectPromise = connectNear()
 async function login() {
     await connectPromise;
 
-    walletConnection.requestSignIn('lands.near');
+    walletConnection.requestSignIn(CONTRACT_NAME);
 }
 
 async function logout() {
@@ -49,9 +69,63 @@ async function logout() {
     walletConnection.signOut();
 }
 
+const CHUNK_SIZE = 16;
+let lastMap = null;
+let fullMap = [];
+async function loadBoardAndDraw() {
+    console.log("getMap");
+    const map = await contract.getMap();
+    for (let i = 0; i < map.length; i++) {
+        if (!lastMap) {
+            fullMap.push(Array(map[i].length));
+        }
+        for (let j = 0; j < map[i].length; j++) {
+            if (!lastMap || lastMap[i][j] != map[i][j]) {
+                console.log("getChunk", i, j);
+                let chunk = await contract.getChunk({ x: i * CHUNK_SIZE, y: j * CHUNK_SIZE });
+                fullMap[i][j] = chunk;
+
+                updateChunk(i, j);
+            }
+        }
+    }
+    lastMap = map;
+
+    setTimeout(loadBoardAndDraw, 5000);
+}
+
+let setTileQueue = [];
+function putTileOnChain(x, y, tileId) {
+    if (setTileQueue.length > 0) {
+        const last = setTileQueue[setTileQueue.length - 1];
+        if (last.x == x && last.y == y && last.tileId == tileId) {
+            return;
+        }
+    }
+
+    console.log('putTileOnChain', x, y, tileId);
+
+    setTileQueue.push({ x, y, tileId });
+    async function setNextPixel() {
+        try {
+            console.log('setTile', setTileQueue[0]);
+            await contract.setTile(setTileQueue[0], SET_TILE_GAS);
+        } catch (e) {
+            console.error('Error setting pixel', e);
+        } finally {
+            setTileQueue.splice(0, 1);
+            if (setTileQueue.length > 0) {
+                setNextPixel();
+            }
+        };
+    }
+    if (setTileQueue.length == 1) {
+        setNextPixel();
+    }
+}
+
 var controls;
 var marker;
-var map;
 var shiftKey;
 var selectedTile;
 
@@ -68,16 +142,16 @@ class MyGame extends Phaser.Scene
     }
 
     create() {
-        map = this.make.tilemap({ key: 'map' });
+        this.mainMap = this.make.tilemap({ key: 'map' });
 
         // The first parameter is the name of the tileset in Tiled and the second parameter is the key
         // of the tileset image used when loading the file in preload.
-        var tiles = map.addTilesetImage('Desert', 'tiles');
+        var tiles = this.mainMap.addTilesetImage('Desert', 'tiles');
 
         // You can load a layer from the map using the layer name from Tiled ('Ground' in this case), or
         // by using the layer index. Since we are going to be manipulating the map, this needs to be a
         // dynamic tilemap layer, not a static one.
-        var layer = map.createLayer('Ground', tiles, 0, 0);
+        var layer = this.mainMap.createLayer('Ground', tiles, 0, 0);
 
         // Create inventory layer
         let inventoryData = [];
@@ -107,13 +181,13 @@ class MyGame extends Phaser.Scene
         this.inventoryBorder.strokeRect(inventoryX, inventoryY, this.inventoryMap.widthInPixels, this.inventoryMap.heightInPixels);
         this.inventoryBorder.setScrollFactor(0);
 
-        selectedTile = map.getTileAt(2, 3);
+        selectedTile = this.mainMap.getTileAt(2, 3);
 
         marker = this.add.graphics();
         marker.lineStyle(2, 0x000000, 1);
-        marker.strokeRect(0, 0, map.tileWidth, map.tileHeight);
+        marker.strokeRect(0, 0, this.mainMap.tileWidth, this.mainMap.tileHeight);
 
-        this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+        this.cameras.main.setBounds(0, 0, this.mainMap.widthInPixels, this.mainMap.heightInPixels);
 
         var cursors = this.input.keyboard.createCursorKeys();
         var controlConfig = {
@@ -147,7 +221,7 @@ class MyGame extends Phaser.Scene
 
         let insideInventory = !!(inventoryX >= 0 && inventoryY >= 0 && inventoryX < this.inventoryMap.width && inventoryY < this.inventoryMap.height);
 
-        let sourceMap = insideInventory ? this.inventoryMap : map;
+        let sourceMap = insideInventory ? this.inventoryMap : this.mainMap;
 
         let pointerTileX = sourceMap.worldToTileX(worldPoint.x);
         let pointerTileY = sourceMap.worldToTileY(worldPoint.y);
@@ -158,8 +232,10 @@ class MyGame extends Phaser.Scene
         if (this.input.manager.activePointer.isDown) {
             if (shiftKey.isDown || sourceMap == this.inventoryMap) {
                 selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
-            } else if (sourceMap == map) {
-                map.putTileAt(selectedTile, pointerTileX, pointerTileY);
+            } else if (sourceMap == this.mainMap) {
+                this.mainMap.putTileAt(selectedTile, pointerTileX, pointerTileY);
+
+                putTileOnChain(pointerTileX, pointerTileY, `${selectedTile.index}`);
             }
         }
     }
@@ -177,5 +253,26 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+
+function updateChunk(i, j) {
+    const scene = game.scene.scenes[0];
+
+    const chunk = fullMap[i][j];
+    for (let ii = 0; ii < CHUNK_SIZE; ii++) {
+        for (let jj = 0; jj < CHUNK_SIZE; jj++) {
+            scene.mainMap.putTileAt(chunk.tiles[ii][jj], i * CHUNK_SIZE + ii, j * CHUNK_SIZE + jj);
+        }
+    }
+
+    updatePutTileQueue();
+}
+
+function updatePutTileQueue() {
+    const scene = game.scene.scenes[0];
+
+    for (let { x, y, tileId } of setTileQueue) {
+        scene.mainMap.putTileAt(tileId, x, y);
+    }
+}
 
 Object.assign(window, { login, logout, game });
