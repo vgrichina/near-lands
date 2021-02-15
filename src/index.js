@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import tilesImg from './assets/tilemaps/tiles/tmw_desert_spacing.png';
 import mapJson from './assets/tilemaps/maps/desert.json';
 
+import 'regenerator-runtime/runtime';
 import { connect, WalletConnection, keyStores } from 'near-api-js';
 
 let near;
@@ -19,6 +20,33 @@ async function connectNear() {
     walletConnection = new WalletConnection(near, APP_KEY_PREFIX)
 
     Object.assign(window, { near, walletConnection});
+}
+
+function $forEach(selector, fn) {
+    document.querySelectorAll(selector).forEach(fn);
+}
+
+const connectPromise = connectNear()
+    .then(() => {
+        if (walletConnection.isSignedIn()) {
+            $forEach('.before-login', elem => elem.style.display = 'none');
+            $forEach('.user-name', elem => elem.innerHTML = walletConnection.getAccountId());
+        } else {
+            $forEach('.require-login', elem => elem.style.display = 'none');
+        }
+    })
+    .catch(console.error);
+
+async function login() {
+    await connectPromise;
+
+    walletConnection.requestSignIn('lands.near');
+}
+
+async function logout() {
+    await connectPromise;
+
+    walletConnection.signOut();
 }
 
 var controls;
@@ -150,4 +178,4 @@ const config = {
 
 const game = new Phaser.Game(config);
 
-connectNear().catch(console.error);
+Object.assign(window, { login, logout, game });
