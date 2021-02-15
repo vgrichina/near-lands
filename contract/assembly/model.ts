@@ -1,9 +1,8 @@
-// @nearfile
-
 const CHUNK_SIZE = 16;
 const CHUNK_COUNT = 5;
 const START_COLOR = "FFFFFF";
 
+@nearBindgen
 export class Chunk {
   nonce: i32;
   rgb: string[][];
@@ -34,6 +33,7 @@ export class Chunk {
   }
 }
 
+@nearBindgen
 export class ChunkMap {
   chunks: i32[][];
 
