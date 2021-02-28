@@ -38,7 +38,7 @@
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
-    "near-api-js": "^0.36.3",
+    "near-api-js": "^0.37.0",
     "phaser": "^3.50.0"
   }
 }
