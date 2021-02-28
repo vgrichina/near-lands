@@ -1,35 +1,23 @@
 import { storage } from "near-sdk-as";
 
-import { Chunk, ChunkMap } from "./model"
+import { Chunk, ChunkMap, TileInfo } from "./model"
 
 // --- contract code goes below
 
+export function setTiles(tiles: TileInfo[]): void {
+  let map = ChunkMap.get();
+  map.setTiles(tiles);
+}
+
 export function setTile(x: i32, y: i32, tileId: string): void {
-  let chunk = getChunk(x, y);
-  chunk.setTile(x, y, tileId);
-  storage.setBytes(Chunk.key(x, y), chunk.encode());
-  let map = _getMap();
-  map.setChunk(x, y, chunk);
-  storage.setBytes('chunkMap', map.encode());
+  let map = ChunkMap.get();
+  map.setTile(x, y, tileId);
 }
 
 export function getChunk(x: i32, y: i32): Chunk {
-  let chunkKey = Chunk.key(x, y);
-  let chunkBytes = storage.getBytes(chunkKey);
-  if (chunkBytes == null) {
-    return new Chunk();
-  }
-  return Chunk.decode(chunkBytes);
+  return Chunk.get(x, y);
 }
 
 export function getMap(): i32[][] {
-  return _getMap().chunks;
-}
-
-function _getMap(): ChunkMap {
-  let mapBytes = storage.getBytes('chunkMap');
-  if (mapBytes == null) {
-    return new ChunkMap();
-  } 
-  return ChunkMap.decode(mapBytes);
+  return ChunkMap.get().chunks;
 }

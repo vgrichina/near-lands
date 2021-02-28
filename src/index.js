@@ -14,6 +14,7 @@ let contract;
 const CONTRACT_NAME = 'lands.near';
 
 const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
+const SET_TILE_BATCH_SIZE = 10;
 
 async function connectNear() {
     const APP_KEY_PREFIX = 'near-lands:'
@@ -33,7 +34,7 @@ async function connectNear() {
 
     contract = new Contract(account, CONTRACT_NAME, {
         viewMethods: ["getMap", "getChunk"],
-        changeMethods: ["setTile"],
+        changeMethods: ["setTiles"],
         sender: account.accountId
     });
 
@@ -106,23 +107,35 @@ function putTileOnChain(x, y, tileId) {
     console.log('putTileOnChain', x, y, tileId);
 
     setTileQueue.push({ x, y, tileId });
-    async function setNextPixel() {
-        try {
-            console.log('setTile', setTileQueue[0]);
-            await contract.setTile(setTileQueue[0], SET_TILE_GAS);
-        } catch (e) {
-            console.error('Error setting pixel', e);
-        } finally {
-            setTileQueue.splice(0, 1);
-            if (setTileQueue.length > 0) {
-                setNextPixel();
-            }
-        };
-    }
-    if (setTileQueue.length == 1) {
-        setNextPixel();
-    }
 }
+
+async function setNextPixel() {
+    try {
+        if (setTileQueue.length == 0) {
+            return;
+        }
+
+        let setTileBatch = setTileQueue.splice(0, Math.min(setTileQueue.length, SET_TILE_BATCH_SIZE));
+
+        // Make sure to set tiles within one chunk
+        let nextChunkIndex = setTileBatch.findIndex(tile =>
+            Math.floor(tile.x / CHUNK_SIZE) != Math.floor(setTileBatch[0].x / CHUNK_SIZE) ||
+            Math.floor(tile.y / CHUNK_SIZE) != Math.floor(setTileBatch[0].y / CHUNK_SIZE))
+        if (nextChunkIndex > 0) {
+            setTileQueue = setTileBatch.slice(nextChunkIndex).concat(setTileQueue);
+            setTileBatch = setTileBatch.slice(0, nextChunkIndex);
+        }
+
+        console.log('setTile', setTileBatch);
+        await contract.setTiles({ tiles: setTileBatch }, SET_TILE_GAS);
+    } catch (e) {
+        console.error('Error setting pixel', e);
+    } finally {
+        setTimeout(() => setNextPixel().catch(console.error), 50);
+    };
+}
+setNextPixel().catch(console.error);
+
 
 var controls;
 var marker;
