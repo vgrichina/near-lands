@@ -71,6 +71,8 @@ async function logout() {
 }
 
 const CHUNK_SIZE = 16;
+const CHUNK_COUNT = 5;
+
 let lastMap = null;
 let fullMap = [];
 async function loadBoardAndDraw() {
@@ -125,6 +127,7 @@ async function setNextPixel() {
             setTileQueue = setTileBatch.slice(nextChunkIndex).concat(setTileQueue);
             setTileBatch = setTileBatch.slice(0, nextChunkIndex);
         }
+        // TODO: Keep track of pending tiles to allow drawing them over background loaded from chain
 
         console.log('setTile', setTileBatch);
         await contract.setTiles({ tiles: setTileBatch }, SET_TILE_GAS);
@@ -151,20 +154,18 @@ class MyGame extends Phaser.Scene
 
     preload() {
         this.load.image('tiles', tilesImg);
-        this.load.tilemapTiledJSON('map', mapJson);
     }
 
     create() {
-        this.mainMap = this.make.tilemap({ key: 'map' });
+        this.mainMap = this.make.tilemap({
+            key: 'mainMap',
+            width: CHUNK_SIZE * CHUNK_COUNT,
+            height: CHUNK_SIZE * CHUNK_COUNT
+        });
 
-        // The first parameter is the name of the tileset in Tiled and the second parameter is the key
-        // of the tileset image used when loading the file in preload.
-        var tiles = this.mainMap.addTilesetImage('Desert', 'tiles');
+        var tiles = this.mainMap.addTilesetImage('Desert', 'tiles', 32, 32, 1, 1);
 
-        // You can load a layer from the map using the layer name from Tiled ('Ground' in this case), or
-        // by using the layer index. Since we are going to be manipulating the map, this needs to be a
-        // dynamic tilemap layer, not a static one.
-        var layer = this.mainMap.createLayer('Ground', tiles, 0, 0);
+        this.mainLayer = this.mainMap.createBlankLayer('Main', tiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
 
         // Create inventory layer
         let inventoryData = [];
@@ -194,7 +195,7 @@ class MyGame extends Phaser.Scene
         this.inventoryBorder.strokeRect(inventoryX, inventoryY, this.inventoryMap.widthInPixels, this.inventoryMap.heightInPixels);
         this.inventoryBorder.setScrollFactor(0);
 
-        selectedTile = this.mainMap.getTileAt(2, 3);
+        selectedTile = this.inventoryMap.getTileAt(5, 3);
 
         marker = this.add.graphics();
         marker.lineStyle(2, 0x000000, 1);
@@ -246,7 +247,7 @@ class MyGame extends Phaser.Scene
             if (shiftKey.isDown || sourceMap == this.inventoryMap) {
                 selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
             } else if (sourceMap == this.mainMap) {
-                this.mainMap.putTileAt(selectedTile, pointerTileX, pointerTileY);
+                this.mainLayer.putTileAt(selectedTile, pointerTileX, pointerTileY);
 
                 putTileOnChain(pointerTileX, pointerTileY, `${selectedTile.index}`);
             }
@@ -273,7 +274,7 @@ function updateChunk(i, j) {
     const chunk = fullMap[i][j];
     for (let ii = 0; ii < CHUNK_SIZE; ii++) {
         for (let jj = 0; jj < CHUNK_SIZE; jj++) {
-            scene.mainMap.putTileAt(chunk.tiles[ii][jj], i * CHUNK_SIZE + ii, j * CHUNK_SIZE + jj);
+            scene.mainLayer.putTileAt(chunk.tiles[ii][jj], i * CHUNK_SIZE + ii, j * CHUNK_SIZE + jj);
         }
     }
 
@@ -284,7 +285,7 @@ function updatePutTileQueue() {
     const scene = game.scene.scenes[0];
 
     for (let { x, y, tileId } of setTileQueue) {
-        scene.mainMap.putTileAt(tileId, x, y);
+        scene.mainLayer.putTileAt(tileId, x, y);
     }
 }
 
