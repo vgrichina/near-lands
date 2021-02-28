@@ -68,6 +68,7 @@ async function logout() {
     await connectPromise;
 
     walletConnection.signOut();
+    window.location.reload();
 }
 
 const CHUNK_SIZE = 16;
