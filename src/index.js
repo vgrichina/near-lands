@@ -110,6 +110,19 @@ function putTileOnChain(x, y, tileId) {
     console.log('putTileOnChain', x, y, tileId);
 
     setTileQueue.push({ x, y, tileId });
+    updatePending();
+}
+
+function updatePending() {
+    if (setTileQueue.length == 0 && setTileBatch.length == 0) {
+        $forEach('.pending-tiles', elem => elem.style = 'display: none;');
+        return;
+    }
+
+    $forEach('.pending-tiles', elem => {
+        elem.style = 'display: inline;';
+        elem.innerHTML = `Pending: ${setTileQueue.length + setTileBatch.length}`;
+    });
 }
 
 async function setNextPixel() {
@@ -128,14 +141,15 @@ async function setNextPixel() {
             setTileQueue = setTileBatch.slice(nextChunkIndex).concat(setTileQueue);
             setTileBatch = setTileBatch.slice(0, nextChunkIndex);
         }
-        // TODO: Keep track of pending tiles to allow drawing them over background loaded from chain
 
         console.log('setTile', setTileBatch);
         await contract.setTiles({ tiles: setTileBatch }, SET_TILE_GAS);
     } catch (e) {
         console.error('Error setting pixel', e);
-        setTileBatch = [];
+        $forEach('.error', elem => elem.innerHTML = `Last error: ${e}`);
     } finally {
+        setTileBatch = [];
+        updatePending();
         setTimeout(() => setNextPixel().catch(console.error), 50);
     };
 }
@@ -256,7 +270,6 @@ class MyGame extends Phaser.Scene
             }
         }
     }
-
 }
 
 const config = {
