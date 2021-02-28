@@ -98,6 +98,7 @@ async function loadBoardAndDraw() {
 }
 
 let setTileQueue = [];
+let setTileBatch = [];
 function putTileOnChain(x, y, tileId) {
     if (setTileQueue.length > 0) {
         const last = setTileQueue[setTileQueue.length - 1];
@@ -117,7 +118,7 @@ async function setNextPixel() {
             return;
         }
 
-        let setTileBatch = setTileQueue.splice(0, Math.min(setTileQueue.length, SET_TILE_BATCH_SIZE));
+        setTileBatch = setTileQueue.splice(0, Math.min(setTileQueue.length, SET_TILE_BATCH_SIZE));
 
         // Make sure to set tiles within one chunk
         let nextChunkIndex = setTileBatch.findIndex(tile =>
@@ -133,6 +134,7 @@ async function setNextPixel() {
         await contract.setTiles({ tiles: setTileBatch }, SET_TILE_GAS);
     } catch (e) {
         console.error('Error setting pixel', e);
+        setTileBatch = [];
     } finally {
         setTimeout(() => setNextPixel().catch(console.error), 50);
     };
@@ -285,7 +287,7 @@ function updateChunk(i, j) {
 function updatePutTileQueue() {
     const scene = game.scene.scenes[0];
 
-    for (let { x, y, tileId } of setTileQueue) {
+    for (let { x, y, tileId } of [...setTileBatch, ...setTileQueue]) {
         scene.mainLayer.putTileAt(tileId, x, y);
     }
 }
