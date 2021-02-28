@@ -126,6 +126,14 @@ function updatePending() {
     });
 }
 
+function updateError(e) {
+    console.log('updateError', e);
+    $forEach('.error', elem => {
+        elem.innerHTML = `Last error: ${e}`;
+        elem.style.display = 'inline';
+    });
+}
+
 async function setNextPixel() {
     try {
         if (setTileQueue.length == 0) {
@@ -147,7 +155,7 @@ async function setNextPixel() {
         await contract.setTiles({ tiles: setTileBatch }, SET_TILE_GAS);
     } catch (e) {
         console.error('Error setting pixel', e);
-        $forEach('.error', elem => elem.innerHTML = `Last error: ${e}`);
+        updateError(e);
     } finally {
         setTileBatch = [];
         updatePending();
@@ -265,8 +273,12 @@ class MyGame extends Phaser.Scene
             if (shiftKey.isDown || sourceMap == this.inventoryMap) {
                 selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
             } else if (sourceMap == this.mainMap) {
-                this.mainLayer.putTileAt(selectedTile, pointerTileX, pointerTileY);
+                if (!walletConnection.isSignedIn()) {
+                    updateError('You need to login to draw');
+                    return;
+                }
 
+                this.mainLayer.putTileAt(selectedTile, pointerTileX, pointerTileY);
                 putTileOnChain(pointerTileX, pointerTileY, `${selectedTile.index}`);
             }
         }
