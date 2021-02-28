@@ -223,6 +223,7 @@ class MyGame extends Phaser.Scene
             fill: '#ffffff'
         });
         help.setScrollFactor(0);
+        help.setAlpha(0.75);
     }
 
     update(time, delta) {
