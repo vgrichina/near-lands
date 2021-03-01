@@ -77,7 +77,6 @@ const CHUNK_COUNT = 5;
 let lastMap = null;
 let fullMap = [];
 async function loadBoardAndDraw() {
-    console.log("getMap");
     const map = await contract.getMap();
     for (let i = 0; i < map.length; i++) {
         if (!lastMap) {
@@ -85,7 +84,6 @@ async function loadBoardAndDraw() {
         }
         for (let j = 0; j < map[i].length; j++) {
             if (!lastMap || lastMap[i][j] != map[i][j]) {
-                console.log("getChunk", i, j);
                 let chunk = await contract.getChunk({ x: i * CHUNK_SIZE, y: j * CHUNK_SIZE });
                 fullMap[i][j] = chunk;
 
@@ -234,7 +232,6 @@ class MyGame extends Phaser.Scene
 
         let desertTiles = this.mainMap.addTilesetImage('desert', 'desert', 32, 32, 1, 1);
         let grassTiles = this.mainMap.addTilesetImage('grass', 'grass', 32, 32, 0, 0, desertTiles.firstgid + desertTiles.total);
-        console.log('deserttotal', desertTiles.total);
         this.allTiles = [desertTiles, grassTiles];
 
         this.mainLayer = this.mainMap.createBlankLayer('Main', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
@@ -305,6 +302,9 @@ class MyGame extends Phaser.Scene
                 }
 
                 this.mainLayer.putTileAt(selectedTile, pointerTileX, pointerTileY);
+                // TODO: Only do it for tiles that got updated
+                this.populateAutotile();
+
                 putTileOnChain(pointerTileX, pointerTileY, `${selectedTile.index}`);
             }
         }
@@ -346,6 +346,7 @@ class MyGame extends Phaser.Scene
                 let { index: tileId } = this.mainLayer.getTileAt(x, y, true);
 
                 if (grassGroundTiles.includes(tileId)) {
+                    this.autotileLayer.removeTileAt(x, y);
                     continue;
                 }
 
@@ -383,6 +384,8 @@ class MyGame extends Phaser.Scene
 
                 if (autotileId) {
                     this.autotileLayer.putTileAt(autotileId, x, y);
+                } else {
+                    this.autotileLayer.removeTileAt(x, y);
                 }
             }
         }
@@ -403,6 +406,7 @@ const config = {
 const game = new Phaser.Game(config);
 
 function updateChunk(i, j) {
+    console.log('updateChunk', i, j);
     const scene = game.scene.scenes[0];
 
     const chunk = fullMap[i][j];
