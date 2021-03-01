@@ -234,9 +234,11 @@ class MyGame extends Phaser.Scene
 
         let desertTiles = this.mainMap.addTilesetImage('desert', 'desert', 32, 32, 1, 1);
         let grassTiles = this.mainMap.addTilesetImage('grass', 'grass', 32, 32, 0, 0, desertTiles.firstgid + desertTiles.total);
+        console.log('deserttotal', desertTiles.total);
         this.allTiles = [desertTiles, grassTiles];
 
         this.mainLayer = this.mainMap.createBlankLayer('Main', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
+        this.autotileLayer = this.mainMap.createBlankLayer('Main-autotile', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
 
         this.createInventory(desertTiles);
 
@@ -292,7 +294,9 @@ class MyGame extends Phaser.Scene
 
         if (this.input.manager.activePointer.isDown) {
             if (shiftKey.isDown || sourceMap == this.inventoryMap) {
+                // TODO: Select proper layer
                 selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
+                console.log('tile', selectedTile && (selectedTile.index - 48));
             } else if (sourceMap == this.mainMap) {
                 if (!walletConnection.isSignedIn()) {
                     updateError('You need to login to draw');
@@ -310,6 +314,71 @@ class MyGame extends Phaser.Scene
             }
         });
     }
+
+    populateAutotile() {
+        let grassTileset = this.allTiles[1];
+        const toGid = localId => (grassTileset.firstgid + localId).toString();
+        let grassGroundTiles = [10, 15, 16, 17].map(toGid);
+        let directions = [
+            [-1, -1], [0, -1], [1, -1],
+            [-1, 0], [0, 0], [1, 0],
+            [-1, 1], [0, 1], [1, 1]
+        ];
+        let cornerDirections = [0, 2, 6, 8];
+        let sideDirections = [1, 3, 5, 7];
+        let innerCornerDirections = [[1, 3], [1, 5], [3, 7], [5, 7]];
+        // TODO: Iterate through directions in priority order (corners first, sides last?)
+        // TODO: Above are directions grass in which should trigger corresponding auto-tile
+
+        let grassOuterTiles = [
+            [6, 7, 8],
+            [9, 10, 11],
+            [12, 13, 14]
+        ].map(row => row.map(toGid));
+
+
+        let { width, height } = this.mainMap;
+        for (let x = 0; x < width; x++) {
+            for (let y = 0; y < height; y++) {
+                let { index: tileId } = this.mainLayer.getTileAt(x, y, true);
+
+                if (grassGroundTiles.includes(tileId)) {
+                    continue;
+                }
+
+                const checkDirection = ([dx, dy]) => {
+                    if (dx == 0 && dy == 0) {
+                        return;
+                    }
+
+                    if (x + dx < 0 || x + dx >= width || y + dy < 0 || y + dy >= height) {
+                        return;
+                    }
+
+                    let { index: neighborTileId } = this.mainLayer.getTileAt(x + dx, y + dy, true);
+                    if (grassGroundTiles.includes(neighborTileId)) {
+                        return true;
+                    }
+
+                    return false;
+                };
+
+                let autotileId;
+                [cornerDirections, sideDirections].forEach(directionIndices =>
+                    directionIndices.forEach(di => {
+                        let [dx, dy] = directions[di];
+                        if (checkDirection([dx, dy])) {
+                            autotileId = grassOuterTiles[1 - dy][1 - dx];
+                        }
+                    }));
+
+                if (autotileId) {
+                    this.autotileLayer.putTileAt(autotileId, x, y);
+                }
+            }
+        }
+    }
+
 }
 
 const config = {
@@ -335,6 +404,9 @@ function updateChunk(i, j) {
     }
 
     updatePutTileQueue();
+
+    // TODO: Only do it for tiles that got updated
+    //scene.populateAutotile();
 }
 
 function updatePutTileQueue() {
