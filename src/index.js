@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 
-import tilesImg from './assets/tilemaps/tiles/tmw_desert_spacing.png';
-import mapJson from './assets/tilemaps/maps/desert.json';
+import desertTilesImg from './assets/tilemaps/tiles/tmw_desert_spacing.png';
+import grassTilesImg from './assets/tilemaps/tiles/grass.png';
 
 import 'regenerator-runtime/runtime';
 import { connect, WalletConnection, keyStores, Contract, Account } from 'near-api-js';
@@ -166,7 +166,6 @@ setNextPixel().catch(console.error);
 
 
 var controls;
-var marker;
 var shiftKey;
 var selectedTile;
 
@@ -178,21 +177,21 @@ class MyGame extends Phaser.Scene
     }
 
     preload() {
-        this.load.image('tiles', tilesImg);
+        this.load.image('desert', desertTilesImg);
+        this.load.image('grass', grassTilesImg);
     }
 
-    create() {
-        this.mainMap = this.make.tilemap({
-            key: 'mainMap',
-            width: CHUNK_SIZE * CHUNK_COUNT,
-            height: CHUNK_SIZE * CHUNK_COUNT
-        });
+    createInventory(tiles) {
+        if (this.inventoryBorder) {
+            this.inventoryBorder.destroy();
+        }
+        if (this.inventoryMap) {
+            this.inventoryMap.destroy();
+        }
+        if (this.marker) {
+            this.marker.destroy();
+        }
 
-        var tiles = this.mainMap.addTilesetImage('Desert', 'tiles', 32, 32, 1, 1);
-
-        this.mainLayer = this.mainMap.createBlankLayer('Main', tiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
-
-        // Create inventory layer
         let inventoryData = [];
         let gid = tiles.firstgid;
         for (let i = 0; i < tiles.rows; i++) {
@@ -209,7 +208,8 @@ class MyGame extends Phaser.Scene
             width: tiles.columns,
             height: tiles.rows,
             data: inventoryData
-        })
+        });
+
         const inventoryX = tiles.tileWidth;
         const inventoryY = this.cameras.main.height - this.inventoryMap.heightInPixels - tiles.tileHeight;
         this.inventoryLayer = this.inventoryMap.createLayer(0, tiles, inventoryX, inventoryY);
@@ -220,11 +220,27 @@ class MyGame extends Phaser.Scene
         this.inventoryBorder.strokeRect(inventoryX, inventoryY, this.inventoryMap.widthInPixels, this.inventoryMap.heightInPixels);
         this.inventoryBorder.setScrollFactor(0);
 
-        selectedTile = this.inventoryMap.getTileAt(5, 3);
+        this.marker = this.add.graphics();
+        this.marker.lineStyle(2, 0x000000, 1);
+        this.marker.strokeRect(0, 0, this.mainMap.tileWidth, this.mainMap.tileHeight);
+    }
 
-        marker = this.add.graphics();
-        marker.lineStyle(2, 0x000000, 1);
-        marker.strokeRect(0, 0, this.mainMap.tileWidth, this.mainMap.tileHeight);
+    create() {
+        this.mainMap = this.make.tilemap({
+            key: 'mainMap',
+            width: CHUNK_SIZE * CHUNK_COUNT,
+            height: CHUNK_SIZE * CHUNK_COUNT
+        });
+
+        let desertTiles = this.mainMap.addTilesetImage('desert', 'desert', 32, 32, 1, 1);
+        let grassTiles = this.mainMap.addTilesetImage('grass', 'grass', 32, 32, 0, 0, desertTiles.firstgid + desertTiles.total);
+        this.allTiles = [desertTiles, grassTiles];
+
+        this.mainLayer = this.mainMap.createBlankLayer('Main', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
+
+        this.createInventory(desertTiles);
+
+        selectedTile = this.inventoryMap.getTileAt(5, 3);
 
         this.cameras.main.setBounds(0, 0, this.mainMap.widthInPixels, this.mainMap.heightInPixels);
 
@@ -241,7 +257,12 @@ class MyGame extends Phaser.Scene
 
         shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
-        var help = this.add.text(16, 16, 'Left-click to paint.\nShift + Left-click to select tile.\nArrows to scroll.', {
+        this.inventoryKeys = [
+            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
+            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
+        ]
+
+        var help = this.add.text(16, 16, 'Left-click to paint.\nShift + Left-click to select tile.\nArrows to scroll. Digits to switch tiles.', {
             fontSize: '18px',
             padding: { x: 10, y: 5 },
             backgroundColor: '#000000',
@@ -266,8 +287,8 @@ class MyGame extends Phaser.Scene
         let pointerTileX = sourceMap.worldToTileX(worldPoint.x);
         let pointerTileY = sourceMap.worldToTileY(worldPoint.y);
 
-        marker.x = sourceMap.tileToWorldX(pointerTileX);
-        marker.y = sourceMap.tileToWorldY(pointerTileY);
+        this.marker.x = sourceMap.tileToWorldX(pointerTileX);
+        this.marker.y = sourceMap.tileToWorldY(pointerTileY);
 
         if (this.input.manager.activePointer.isDown) {
             if (shiftKey.isDown || sourceMap == this.inventoryMap) {
@@ -282,6 +303,12 @@ class MyGame extends Phaser.Scene
                 putTileOnChain(pointerTileX, pointerTileY, `${selectedTile.index}`);
             }
         }
+
+        this.inventoryKeys.forEach((key, i) => {
+            if (Phaser.Input.Keyboard.JustDown(key)) {
+                this.createInventory(this.allTiles[i]);
+            }
+        });
     }
 }
 
