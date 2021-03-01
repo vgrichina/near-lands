@@ -327,6 +327,7 @@ class MyGame extends Phaser.Scene
         let cornerDirections = [0, 2, 6, 8];
         let sideDirections = [1, 3, 5, 7];
         let innerCornerDirections = [[1, 3], [1, 5], [3, 7], [5, 7]];
+
         // TODO: Iterate through directions in priority order (corners first, sides last?)
         // TODO: Above are directions grass in which should trigger corresponding auto-tile
 
@@ -336,6 +337,7 @@ class MyGame extends Phaser.Scene
             [12, 13, 14]
         ].map(row => row.map(toGid));
 
+        let innerCornerTiles = [1, 2, 4, 5].map(toGid);
 
         let { width, height } = this.mainMap;
         for (let x = 0; x < width; x++) {
@@ -372,6 +374,12 @@ class MyGame extends Phaser.Scene
                         }
                     }));
 
+                innerCornerDirections.forEach((directionIndices, i) => {
+                    if (directionIndices.every(di => checkDirection(directions[di]))) {
+                        autotileId = innerCornerTiles[i];
+                    }
+                });
+
                 if (autotileId) {
                     this.autotileLayer.putTileAt(autotileId, x, y);
                 }
@@ -406,7 +414,7 @@ function updateChunk(i, j) {
     updatePutTileQueue();
 
     // TODO: Only do it for tiles that got updated
-    //scene.populateAutotile();
+    scene.populateAutotile();
 }
 
 function updatePutTileQueue() {
