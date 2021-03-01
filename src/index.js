@@ -239,6 +239,7 @@ class MyGame extends Phaser.Scene
 
         this.mainLayer = this.mainMap.createBlankLayer('Main', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
         this.autotileLayer = this.mainMap.createBlankLayer('Main-autotile', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
+        this.mainMap.setLayer(this.mainLayer);
 
         this.createInventory(desertTiles);
 
