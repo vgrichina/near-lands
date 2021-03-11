@@ -356,21 +356,13 @@ class MyGame extends Phaser.Scene
             for (let y = 0; y < height; y++) {
                 let { index: tileId } = this.mainLayer.getTileAt(x, y, true);
 
-                let isCoreTile = false;
-                for (let { coreTiles } of tilesetConfigs) {
-                    if (coreTiles.includes(tileId)) {
-                        isCoreTile = true;
-                        break;
-                    }
-                }
-                if (isCoreTile) {
-                    this.autotileLayer.removeTileAt(x, y);
-                    continue;
-                }
-                // TODO: Core tile (e.g. water) can be surrounded by other core tile (e.g. grass), need to be supported
-
                 let autotileId;
                 for (let { coreTiles, outerTiles, innerCornerTiles } of tilesetConfigs) {
+                    if (coreTiles.includes(tileId)) {
+                        autotileId = null;
+                        continue;
+                    }
+
                     const checkDirection = ([dx, dy]) => {
                         if (dx == 0 && dy == 0) {
                             return;
