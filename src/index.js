@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 
 import desertTilesImg from './assets/tilemaps/tiles/tmw_desert_spacing.png';
 import grassTilesImg from './assets/tilemaps/tiles/grass.png';
+import waterTilesImg from './assets/tilemaps/tiles/water.png';
 
 import 'regenerator-runtime/runtime';
 import { connect, WalletConnection, keyStores, Contract, Account } from 'near-api-js';
@@ -177,6 +178,7 @@ class MyGame extends Phaser.Scene
     preload() {
         this.load.image('desert', desertTilesImg);
         this.load.image('grass', grassTilesImg);
+        this.load.image('water', waterTilesImg);
     }
 
     createInventory(tiles) {
@@ -232,7 +234,9 @@ class MyGame extends Phaser.Scene
 
         let desertTiles = this.mainMap.addTilesetImage('desert', 'desert', 32, 32, 1, 1);
         let grassTiles = this.mainMap.addTilesetImage('grass', 'grass', 32, 32, 0, 0, desertTiles.firstgid + desertTiles.total);
-        this.allTiles = [desertTiles, grassTiles];
+        let waterTiles = this.mainMap.addTilesetImage('water', 'water', 32, 32, 0, 0, grassTiles.firstgid + grassTiles.total);
+        this.allTiles = [desertTiles, grassTiles, waterTiles];
+        this.lpcTiles = [grassTiles, waterTiles];
 
         this.mainLayer = this.mainMap.createBlankLayer('Main', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
         this.autotileLayer = this.mainMap.createBlankLayer('Main-autotile', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
@@ -260,6 +264,7 @@ class MyGame extends Phaser.Scene
         this.inventoryKeys = [
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
+            this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
         ]
 
         var help = this.add.text(16, 16, 'Left-click to paint.\nShift + Left-click to select tile.\nArrows to scroll. Digits to switch tiles.', {
@@ -317,9 +322,26 @@ class MyGame extends Phaser.Scene
     }
 
     populateAutotile() {
-        let grassTileset = this.allTiles[1];
-        const toGid = localId => (grassTileset.firstgid + localId).toString();
-        let grassGroundTiles = [10, 15, 16, 17].map(toGid);
+        let tilesetConfigs = [];
+        for (let tileset of this.lpcTiles) {
+            const toGid = localId => (tileset.firstgid + localId).toString();
+
+            let coreTiles = [10, 15, 16, 17].map(toGid);
+            let outerTiles = [
+                [6, 7, 8],
+                [9, 10, 11],
+                [12, 13, 14]
+            ].map(row => row.map(toGid));
+            let innerCornerTiles = [1, 2, 4, 5].map(toGid);
+
+            tilesetConfigs.push({
+                coreTiles,
+                outerTiles,
+                innerCornerTiles
+            })
+        }
+        window.tilesetConfigs = tilesetConfigs;
+
         let directions = [
             [-1, -1], [0, -1], [1, -1],
             [-1, 0], [0, 0], [1, 0],
@@ -329,58 +351,57 @@ class MyGame extends Phaser.Scene
         let sideDirections = [1, 3, 5, 7];
         let innerCornerDirections = [[1, 3], [1, 5], [3, 7], [5, 7]];
 
-        // TODO: Iterate through directions in priority order (corners first, sides last?)
-        // TODO: Above are directions grass in which should trigger corresponding auto-tile
-
-        let grassOuterTiles = [
-            [6, 7, 8],
-            [9, 10, 11],
-            [12, 13, 14]
-        ].map(row => row.map(toGid));
-
-        let innerCornerTiles = [1, 2, 4, 5].map(toGid);
-
         let { width, height } = this.mainMap;
         for (let x = 0; x < width; x++) {
             for (let y = 0; y < height; y++) {
                 let { index: tileId } = this.mainLayer.getTileAt(x, y, true);
 
-                if (grassGroundTiles.includes(tileId)) {
+                let isCoreTile = false;
+                for (let { coreTiles } of tilesetConfigs) {
+                    if (coreTiles.includes(tileId)) {
+                        isCoreTile = true;
+                        break;
+                    }
+                }
+                if (isCoreTile) {
                     this.autotileLayer.removeTileAt(x, y);
                     continue;
                 }
-
-                const checkDirection = ([dx, dy]) => {
-                    if (dx == 0 && dy == 0) {
-                        return;
-                    }
-
-                    if (x + dx < 0 || x + dx >= width || y + dy < 0 || y + dy >= height) {
-                        return;
-                    }
-
-                    let { index: neighborTileId } = this.mainLayer.getTileAt(x + dx, y + dy, true);
-                    if (grassGroundTiles.includes(neighborTileId)) {
-                        return true;
-                    }
-
-                    return false;
-                };
+                // TODO: Core tile (e.g. water) can be surrounded by other core tile (e.g. grass), need to be supported
 
                 let autotileId;
-                [cornerDirections, sideDirections].forEach(directionIndices =>
-                    directionIndices.forEach(di => {
-                        let [dx, dy] = directions[di];
-                        if (checkDirection([dx, dy])) {
-                            autotileId = grassOuterTiles[1 - dy][1 - dx];
+                for (let { coreTiles, outerTiles, innerCornerTiles } of tilesetConfigs) {
+                    const checkDirection = ([dx, dy]) => {
+                        if (dx == 0 && dy == 0) {
+                            return;
                         }
-                    }));
 
-                innerCornerDirections.forEach((directionIndices, i) => {
-                    if (directionIndices.every(di => checkDirection(directions[di]))) {
-                        autotileId = innerCornerTiles[i];
-                    }
-                });
+                        if (x + dx < 0 || x + dx >= width || y + dy < 0 || y + dy >= height) {
+                            return;
+                        }
+
+                        let { index: neighborTileId } = this.mainLayer.getTileAt(x + dx, y + dy, true);
+                        if (coreTiles.includes(neighborTileId)) {
+                            return true;
+                        }
+
+                        return false;
+                    };
+
+                    [cornerDirections, sideDirections].forEach(directionIndices =>
+                        directionIndices.forEach(di => {
+                            let [dx, dy] = directions[di];
+                            if (checkDirection([dx, dy])) {
+                                autotileId = outerTiles[1 - dy][1 - dx];
+                            }
+                        }));
+
+                    innerCornerDirections.forEach((directionIndices, i) => {
+                        if (directionIndices.every(di => checkDirection(directions[di]))) {
+                            autotileId = innerCornerTiles[i];
+                        }
+                    });
+                }
 
                 if (autotileId) {
                     this.autotileLayer.putTileAt(autotileId, x, y);
