@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "near-api-js": "^0.37.0",
-    "phaser": "^3.50.0"
+    "phaser": "^3.50.0",
+    "regenerator-runtime": "^0.13.7"
   }
 }
