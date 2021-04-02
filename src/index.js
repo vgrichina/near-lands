@@ -3,9 +3,12 @@ import Phaser from 'phaser';
 import desertTilesImg from './assets/tilemaps/tiles/tmw_desert_spacing.png';
 import grassTilesImg from './assets/tilemaps/tiles/grass.png';
 import waterTilesImg from './assets/tilemaps/tiles/water.png';
+import gamepadSpritesheet from './assets/gamepad/gamepad_spritesheet.png'
 
 import 'regenerator-runtime/runtime';
 import { connect, WalletConnection, keyStores, Contract, Account } from 'near-api-js';
+
+import { VirtualGamepad } from './phaser-plugin-virtual-gamepad'
 
 let near;
 let walletConnection;
@@ -179,6 +182,8 @@ class MyGame extends Phaser.Scene
         this.load.image('desert', desertTilesImg);
         this.load.image('grass', grassTilesImg);
         this.load.image('water', waterTilesImg);
+
+        this.load.spritesheet({ key: 'gamepad', url: gamepadSpritesheet, frameConfig: { frameWidth: 100, frameHeight: 100 } });
     }
 
     createInventory(tiles) {
@@ -275,6 +280,10 @@ class MyGame extends Phaser.Scene
         });
         help.setScrollFactor(0);
         help.setAlpha(0.75);
+
+        this.game.plugins.installScenePlugin('gamepad', VirtualGamepad, 'gamepad', this);
+        this.joystick = this.gamepad.addJoystick(100, 420, 1.2, 'gamepad');
+        this.button = this.gamepad.addButton(400, 420, 1.0, 'gamepad');
     }
 
     update(time, delta) {
