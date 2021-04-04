@@ -164,10 +164,7 @@ async function setNextPixel() {
 }
 setNextPixel().catch(console.error);
 
-
-var controls;
-var shiftKey;
-var selectedTile;
+const CAMERA_SPEED = 0.5;
 
 class MyGame extends Phaser.Scene
 {
@@ -249,7 +246,7 @@ class MyGame extends Phaser.Scene
 
         this.createInventory(desertTiles);
 
-        selectedTile = this.inventoryMap.getTileAt(5, 3);
+        this.selectedTile = this.inventoryMap.getTileAt(5, 3);
 
         this.cameras.main.setBounds(0, 0, this.mainMap.widthInPixels, this.mainMap.heightInPixels);
 
@@ -260,11 +257,11 @@ class MyGame extends Phaser.Scene
             right: cursors.right,
             up: cursors.up,
             down: cursors.down,
-            speed: 0.5
+            speed: CAMERA_SPEED
         };
-        controls = new Phaser.Cameras.Controls.FixedKeyControl(controlConfig);
+        this.controls = new Phaser.Cameras.Controls.FixedKeyControl(controlConfig);
 
-        shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+        this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
         this.inventoryKeys = [
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
@@ -290,7 +287,10 @@ class MyGame extends Phaser.Scene
     }
 
     update(time, delta) {
-        controls.update(delta);
+        this.controls.update(delta);
+
+        this.cameras.main.scrollX += this.gamepad.joystick.properties.x / 100 * CAMERA_SPEED * delta;
+        this.cameras.main.scrollY += this.gamepad.joystick.properties.y / 100 * CAMERA_SPEED * delta;
 
         var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main);
 
@@ -308,21 +308,21 @@ class MyGame extends Phaser.Scene
         this.marker.y = sourceMap.tileToWorldY(pointerTileY);
 
         if (this.input.manager.activePointer.isDown) {
-            if (shiftKey.isDown || sourceMap == this.inventoryMap) {
+            if (this.shiftKey.isDown || sourceMap == this.inventoryMap) {
                 // TODO: Select proper layer
-                selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
-                console.log('tile', selectedTile && (selectedTile.index - 48));
+                this.selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
+                console.log('tile', this.selectedTile && (this.selectedTile.index - 48));
             } else if (sourceMap == this.mainMap) {
                 if (!walletConnection.isSignedIn()) {
                     updateError('You need to login to draw');
                     return;
                 }
 
-                this.mainLayer.putTileAt(selectedTile, pointerTileX, pointerTileY);
+                this.mainLayer.putTileAt(this.selectedTile, pointerTileX, pointerTileY);
                 // TODO: Only do it for tiles that got updated
                 this.populateAutotile();
 
-                putTileOnChain(pointerTileX, pointerTileY, `${selectedTile.index}`);
+                putTileOnChain(pointerTileX, pointerTileY, `${this.selectedTile.index}`);
             }
         }
 
