@@ -186,7 +186,6 @@ export class VirtualGamepad extends Phaser.Plugins.ScenePlugin {
 
         // If the pointer is removed, reset the joystick
         if (resetJoystick) {
-            console.log('resetJoystick');
             if ((this.joystickPointer === null) || !this.joystickPointer.isDown) {
                 this.moveJoystick(this.joystickPoint);
                 this.joystick.properties.inUse = false;
@@ -222,8 +221,6 @@ export class VirtualGamepad extends Phaser.Plugins.ScenePlugin {
     };
     
     moveJoystick(point) {
-        console.log('moveJoystick', point.x, point.y);
-        
         // Calculate x/y of pointer from joystick center
         var deltaX = point.x - this.joystickPoint.x;
 		var deltaY = point.y - this.joystickPoint.y;
