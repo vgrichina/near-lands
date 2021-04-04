@@ -280,8 +280,9 @@ class MyGame extends Phaser.Scene
         help.setAlpha(0.75);
 
         this.game.plugins.installScenePlugin('gamepad', VirtualGamepad, 'gamepad', this);
-        this.joystick = this.gamepad.addJoystick(100, 420, 1.2, 'gamepad');
-        this.button = this.gamepad.addButton(400, 420, 1.0, 'gamepad');
+        const { width, height } = this.cameras.main;
+        this.joystick = this.gamepad.addJoystick(80, height - 80, 1.2, 'gamepad');
+        this.button = this.gamepad.addButton(width - 80, height - 80, 1.0, 'gamepad');
 
         loadBoardAndDraw().catch(console.error);
     }
