@@ -42,8 +42,6 @@ async function connectNear() {
         sender: account.accountId
     });
 
-    loadBoardAndDraw().catch(console.error);
-
     Object.assign(window, { near, walletConnection, account, contract });
 }
 
@@ -284,6 +282,8 @@ class MyGame extends Phaser.Scene
         this.game.plugins.installScenePlugin('gamepad', VirtualGamepad, 'gamepad', this);
         this.joystick = this.gamepad.addJoystick(100, 420, 1.2, 'gamepad');
         this.button = this.gamepad.addButton(400, 420, 1.0, 'gamepad');
+
+        loadBoardAndDraw().catch(console.error);
     }
 
     update(time, delta) {
