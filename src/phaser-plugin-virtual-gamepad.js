@@ -175,14 +175,10 @@ export class VirtualGamepad extends Phaser.Plugins.ScenePlugin {
         this.button.isDown = false;
         // TODO: Don't hardcoded texture key here
         this.button.setTexture('gamepad', 0);
-        // TODO: Use multiple touch pointers
-        // this.scene.input.pointers.forEach(function(p) {
-        //     resetJoystick = testDistance(p, this);
-        // }, this);
-        resetJoystick = this.testDistance(this.scene.input.activePointer);
-        
-        // See if the mouse pointer is in range of the joystick or buttons
-        resetJoystick = this.testDistance(this.scene.input.mousePointer);
+
+        this.scene.game.input.pointers.forEach(function(p) {
+            resetJoystick = this.testDistance(p);
+        }, this);
 
         // If the pointer is removed, reset the joystick
         if (resetJoystick) {

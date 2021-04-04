@@ -229,6 +229,8 @@ class MyGame extends Phaser.Scene
     }
 
     create() {
+        this.input.addPointer(2);
+
         this.mainMap = this.make.tilemap({
             key: 'mainMap',
             width: CHUNK_SIZE * CHUNK_COUNT,
