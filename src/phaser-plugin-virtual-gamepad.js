@@ -53,7 +53,6 @@ export class VirtualGamepad extends Phaser.Plugins.ScenePlugin {
         super(scene, pluginManager);
         
         // Class members
-        this.input = null;
         this.joystick = null;
         this.joystickPad = null;
         this.joystickPoint = null;
@@ -65,12 +64,10 @@ export class VirtualGamepad extends Phaser.Plugins.ScenePlugin {
     }
 
     boot() {
-        this.input = this.scene.input;
-
         let eventEmitter = this.systems.events;
         
         // Polling for the joystick and button pushes
-        eventEmitter.on('preupdate', this.gamepadPoll);
+        eventEmitter.on('preupdate', this.gamepadPoll.bind(this));
     };
     
     /**
@@ -178,18 +175,20 @@ export class VirtualGamepad extends Phaser.Plugins.ScenePlugin {
         this.button.isDown = false;
         // TODO: Don't hardcoded texture key here
         this.button.setTexture('gamepad', 0);
-        this.scene.input.pointers.forEach(function(p) {
-            resetJoystick = testDistance(p, this);
-        }, this);
+        // TODO: Use multiple touch pointers
+        // this.scene.input.pointers.forEach(function(p) {
+        //     resetJoystick = testDistance(p, this);
+        // }, this);
+        resetJoystick = this.testDistance(this.scene.input.activePointer);
         
         // See if the mouse pointer is in range of the joystick or buttons
-        resetJoystick = testDistance(this.scene.input.mousePointer, this);
-        
+        resetJoystick = this.testDistance(this.scene.input.mousePointer);
+
         // If the pointer is removed, reset the joystick
         if (resetJoystick) {
-            if ((this.joystickPointer === null) || 
-                (this.joystickPointer.isUp)) {
-                moveJoystick(this.joystickPoint, this);
+            console.log('resetJoystick');
+            if ((this.joystickPointer === null) || !this.joystickPointer.isDown) {
+                this.moveJoystick(this.joystickPoint);
                 this.joystick.properties.inUse = false;
                 this.joystickPointer = null;
             }
@@ -197,24 +196,24 @@ export class VirtualGamepad extends Phaser.Plugins.ScenePlugin {
         
     };
     
-    testDistance(pointer, that) {
+    testDistance(pointer) {
     
         var reset = true;
     
         // See if the pointer is over the joystick
-        var d = that.joystickPoint.distance(pointer.position);
-        if ((pointer.isDown) && ((pointer === that.joystickPointer) || 
-            (d < that.joystickRadius))) {
+        var d = Phaser.Math.Distance.BetweenPoints(this.joystickPoint, pointer.position);
+        if ((pointer.isDown) && ((pointer === this.joystickPointer) || 
+            (d < this.joystickRadius))) {
             reset = false;
-            that.joystick.properties.inUse = true;
-            that.joystickPointer = pointer;
-            moveJoystick(pointer.position, that);
+            this.joystick.properties.inUse = true;
+            this.joystickPointer = pointer;
+            this.moveJoystick(pointer.position);
         }
         
         // See if the pointer is over the button
-        d = that.buttonPoint.distance(pointer.position);
-        if ((pointer.isDown) && (d < that.buttonRadius)) {
-            that.button.isDown = true;
+        d = Phaser.Math.Distance.BetweenPoints(this.buttonPoint, pointer.position);
+        if ((pointer.isDown) && (d < this.buttonRadius)) {
+            this.button.isDown = true;
             // TODO: Don't hardcoded texture key here
             this.button.setTexture('gamepad', 1);
         }
@@ -222,56 +221,57 @@ export class VirtualGamepad extends Phaser.Plugins.ScenePlugin {
         return reset;
     };
     
-    moveJoystick(point, that) {
+    moveJoystick(point) {
+        console.log('moveJoystick', point.x, point.y);
         
         // Calculate x/y of pointer from joystick center
-        var deltaX = point.x - that.joystickPoint.x;
-		var deltaY = point.y - that.joystickPoint.y;
+        var deltaX = point.x - this.joystickPoint.x;
+		var deltaY = point.y - this.joystickPoint.y;
         
         // Get the angle (radians) of the pointer on the joystick
-        var rotation = that.joystickPoint.angle(point);
+        var rotation = Phaser.Math.Angle.BetweenPoints(this.joystickPoint, point);
         
         // Set bounds on joystick pad
-        if (that.joystickPoint.distance(point) > that.joystickRadius) {
+        if (Phaser.Math.Distance.BetweenPoints(this.joystickPoint, point) > this.joystickRadius) {
             deltaX = (deltaX === 0) ? 
-                0 : Math.cos(rotation) * that.joystickRadius;
+                0 : Math.cos(rotation) * this.joystickRadius;
             deltaY = (deltaY === 0) ?
-                0 : Math.sin(rotation) * that.joystickRadius;
+                0 : Math.sin(rotation) * this.joystickRadius;
         }
         
         // Normalize x/y
-        that.joystick.properties.x = parseInt((deltaX / 
-            that.joystickRadius) * 100, 10);
-		that.joystick.properties.y = parseInt((deltaY  /
-            that.joystickRadius) * 100, 10);
+        this.joystick.properties.x = parseInt((deltaX / 
+            this.joystickRadius) * 100, 10);
+		this.joystick.properties.y = parseInt((deltaY  /
+            this.joystickRadius) * 100, 10);
         
         // Set polar coordinates
-        that.joystick.properties.rotation = rotation;
-        that.joystick.properties.angle = (180 / Math.PI) * rotation;
-        that.joystick.properties.distance = 
-            parseInt((that.joystickPoint.distance(point) / 
-            that.joystickRadius) * 100, 10);
+        this.joystick.properties.rotation = rotation;
+        this.joystick.properties.angle = (180 / Math.PI) * rotation;
+        this.joystick.properties.distance = 
+            parseInt((Phaser.Math.Distance.BetweenPoints(this.joystickPoint, point) / 
+            this.joystickRadius) * 100, 10);
             
         // Set d-pad directions
-        that.joystick.properties.up = ((rotation > UP_LOWER_BOUND) && 
+        this.joystick.properties.up = ((rotation > UP_LOWER_BOUND) && 
             (rotation <= UP_UPPER_BOUND));
-        that.joystick.properties.down = ((rotation > DOWN_LOWER_BOUND) && 
+        this.joystick.properties.down = ((rotation > DOWN_LOWER_BOUND) && 
             (rotation <= DOWN_UPPER_BOUND));
-        that.joystick.properties.right = ((rotation > RIGHT_LOWER_BOUND) && 
+        this.joystick.properties.right = ((rotation > RIGHT_LOWER_BOUND) && 
             (rotation <= RIGHT_UPPER_BOUND));
-        that.joystick.properties.left = ((rotation > LEFT_LOWER_BOUND) || 
+        this.joystick.properties.left = ((rotation > LEFT_LOWER_BOUND) || 
             (rotation <= LEFT_UPPER_BOUND));
             
         // Fix situation where left/right is true if X/Y is centered
-        if ((that.joystick.properties.x === 0) && 
-            (that.joystick.properties.y === 0)) {
-            that.joystick.properties.right = false;
-            that.joystick.properties.left = false;
+        if ((this.joystick.properties.x === 0) && 
+            (this.joystick.properties.y === 0)) {
+            this.joystick.properties.right = false;
+            this.joystick.properties.left = false;
         }
         
         // Move joystick pad images
-        that.joystickPad.cameraOffset.x = that.joystickPoint.x + deltaX;
-        that.joystickPad.cameraOffset.y = that.joystickPoint.y + deltaY;
+        this.joystickPad.x = this.joystickPoint.x + deltaX;
+        this.joystickPad.y = this.joystickPoint.y + deltaY;
     };
     
 };
