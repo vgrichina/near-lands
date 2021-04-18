@@ -269,19 +269,25 @@ class MyGame extends Phaser.Scene
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
         ]
 
-        var help = this.add.text(16, 16, 'Left-click to paint.\nShift + Left-click to select tile.\nArrows to scroll. Digits to switch tiles.', {
-            fontSize: '18px',
-            padding: { x: 10, y: 5 },
-            backgroundColor: '#000000',
-            fill: '#ffffff'
-        });
-        help.setScrollFactor(0);
-        help.setAlpha(0.75);
+        const isTouchDevice = navigator.maxTouchPoints > 0;
 
-        this.game.plugins.installScenePlugin('gamepad', VirtualGamepad, 'gamepad', this);
-        const { width, height } = this.cameras.main;
-        this.joystick = this.gamepad.addJoystick(80, height - 80, 1.2, 'gamepad');
-        this.button = this.gamepad.addButton(width - 80, height - 80, 1.0, 'gamepad');
+        if (!isTouchDevice) {
+            var help = this.add.text(16, 16, 'Left-click to paint.\nShift + Left-click to select tile.\nArrows to scroll. Digits to switch tiles.', {
+                fontSize: '18px',
+                padding: { x: 10, y: 5 },
+                backgroundColor: '#000000',
+                fill: '#ffffff'
+            });
+            help.setScrollFactor(0);
+            help.setAlpha(0.75);
+        }
+
+        if (isTouchDevice) {
+            this.game.plugins.installScenePlugin('gamepad', VirtualGamepad, 'gamepad', this);
+            const { width, height } = this.cameras.main;
+            this.joystick = this.gamepad.addJoystick(80, height - 80, 1.2, 'gamepad');
+            this.button = this.gamepad.addButton(width - 80, height - 80, 1.0, 'gamepad');
+        }
 
         loadBoardAndDraw().catch(console.error);
     }
@@ -289,8 +295,10 @@ class MyGame extends Phaser.Scene
     update(time, delta) {
         this.controls.update(delta);
 
-        this.cameras.main.scrollX += this.gamepad.joystick.properties.x / 100 * CAMERA_SPEED * delta;
-        this.cameras.main.scrollY += this.gamepad.joystick.properties.y / 100 * CAMERA_SPEED * delta;
+        if (this.gamepad) {
+            this.cameras.main.scrollX += this.gamepad.joystick.properties.x / 100 * CAMERA_SPEED * delta;
+            this.cameras.main.scrollY += this.gamepad.joystick.properties.y / 100 * CAMERA_SPEED * delta;
+        }
 
         var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main);
 
@@ -308,9 +316,10 @@ class MyGame extends Phaser.Scene
         this.marker.y = sourceMap.tileToWorldY(pointerTileY);
 
         const insideVirtualGamepad =
-            Phaser.Geom.Rectangle.ContainsPoint(
-                Phaser.Geom.Rectangle.Inflate(this.joystick.getBounds(), 75, 75), this.input.activePointer.position) ||
-            Phaser.Geom.Rectangle.ContainsPoint(this.button.getBounds(), this.input.activePointer.position);
+            this.joystick && (
+                Phaser.Geom.Rectangle.ContainsPoint(
+                    Phaser.Geom.Rectangle.Inflate(this.joystick.getBounds(), 75, 75), this.input.activePointer.position) ||
+                Phaser.Geom.Rectangle.ContainsPoint(this.button.getBounds(), this.input.activePointer.position));
 
         if (this.input.manager.activePointer.isDown && !insideVirtualGamepad) {
             if (this.shiftKey.isDown || sourceMap == this.inventoryMap) {
