@@ -210,8 +210,8 @@ class MyGame extends Phaser.Scene
             data: inventoryData
         });
 
-        const inventoryX = tiles.tileWidth;
-        const inventoryY = this.cameras.main.height - this.inventoryMap.heightInPixels - tiles.tileHeight;
+        const inventoryX = this.cameras.main.width - this.inventoryMap.widthInPixels - tiles.tileWidth;
+        const inventoryY = tiles.tileHeight;
         this.inventoryLayer = this.inventoryMap.createLayer(0, tiles, inventoryX, inventoryY);
         this.inventoryLayer.setScrollFactor(0);
 
