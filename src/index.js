@@ -307,7 +307,12 @@ class MyGame extends Phaser.Scene
         this.marker.x = sourceMap.tileToWorldX(pointerTileX);
         this.marker.y = sourceMap.tileToWorldY(pointerTileY);
 
-        if (this.input.manager.activePointer.isDown) {
+        const insideVirtualGamepad =
+            Phaser.Geom.Rectangle.ContainsPoint(
+                Phaser.Geom.Rectangle.Inflate(this.joystick.getBounds(), 75, 75), this.input.activePointer.position) ||
+            Phaser.Geom.Rectangle.ContainsPoint(this.button.getBounds(), this.input.activePointer.position);
+
+        if (this.input.manager.activePointer.isDown && !insideVirtualGamepad) {
             if (this.shiftKey.isDown || sourceMap == this.inventoryMap) {
                 // TODO: Select proper layer
                 this.selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
