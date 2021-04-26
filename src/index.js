@@ -272,6 +272,31 @@ class MyGame extends Phaser.Scene
         ]
 
         this.player = this.physics.add.sprite(400, 350, "princess");
+        const anims = this.anims;
+        anims.create({
+            key: "player-left-walk",
+            frames: anims.generateFrameNumbers("princess", { frames: [9, 10, 11, 12, 13, 14, 15, 16, 17] }),
+            frameRate: 10,
+            repeat: -1
+        });
+        anims.create({
+            key: "player-right-walk",
+            frames: anims.generateFrameNumbers("princess", { frames: [27, 28, 29, 30, 31, 32, 33, 34, 35, 36] }),
+            frameRate: 10,
+            repeat: -1
+        });
+        anims.create({
+            key: "player-up-walk",
+            frames: anims.generateFrameNumbers("princess", { frames: [0, 1, 2, 3, 4, 5, 6, 7, 8] }),
+            frameRate: 10,
+            repeat: -1
+        });
+        anims.create({
+            key: "player-down-walk",
+            frames: anims.generateFrameNumbers("princess", { frames: [18, 19, 20, 21, 22, 23, 24, 25, 26] }),
+            frameRate: 10,
+            repeat: -1
+        });
 
         const isTouchDevice = navigator.maxTouchPoints > 0;
 
@@ -351,6 +376,7 @@ class MyGame extends Phaser.Scene
         });
 
         // Stop any previous movement from the last frame
+        const prevVelocity = this.player.body.velocity.clone();
         this.player.body.setVelocity(0);
 
         const speed = 1000 * CAMERA_SPEED;
@@ -358,19 +384,32 @@ class MyGame extends Phaser.Scene
         // Horizontal movement
         if (this.cursors.left.isDown) {
             this.player.body.setVelocityX(-100);
+            this.player.anims.play("player-left-walk", true);
         } else if (this.cursors.right.isDown) {
             this.player.body.setVelocityX(100);
+            this.player.anims.play("player-right-walk", true);
         }
 
         // Vertical movement
         if (this.cursors.up.isDown) {
             this.player.body.setVelocityY(-100);
+            this.player.anims.play("player-up-walk", true);
         } else if (this.cursors.down.isDown) {
             this.player.body.setVelocityY(100);
+            this.player.anims.play("player-down-walk", true);
         }
 
         // Normalize and scale the velocity so that player can't move faster along a diagonal
         this.player.body.velocity.normalize().scale(speed);
+
+        if (this.player.body.velocity.length() == 0) {
+            // If we were moving, pick and idle frame to use
+            this.player.anims.stop();
+            if (prevVelocity.x < 0) this.player.setTexture("princess", 9);
+            else if (prevVelocity.x > 0) this.player.setTexture("princess", 27);
+            else if (prevVelocity.y < 0) this.player.setTexture("princess", 0);
+            else if (prevVelocity.y > 0) this.player.setTexture("princess", 18);
+        }
     }
 
     populateAutotile() {
