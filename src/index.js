@@ -4,6 +4,7 @@ import desertTilesImg from './assets/tilemaps/tiles/tmw_desert_spacing.png';
 import grassTilesImg from './assets/tilemaps/tiles/grass.png';
 import waterTilesImg from './assets/tilemaps/tiles/water.png';
 import gamepadSpritesheet from './assets/gamepad/gamepad_spritesheet.png'
+import princessSpritesheet from './assets/princess.png'
 
 import 'regenerator-runtime/runtime';
 import { connect, WalletConnection, keyStores, Contract, Account } from 'near-api-js';
@@ -179,6 +180,7 @@ class MyGame extends Phaser.Scene
         this.load.image('water', waterTilesImg);
 
         this.load.spritesheet({ key: 'gamepad', url: gamepadSpritesheet, frameConfig: { frameWidth: 100, frameHeight: 100 } });
+        this.load.spritesheet({ key: 'princess', url: princessSpritesheet, frameConfig: { frameWidth: 64, frameHeight: 64 }})
     }
 
     createInventory(tiles) {
@@ -250,13 +252,13 @@ class MyGame extends Phaser.Scene
 
         this.cameras.main.setBounds(0, 0, this.mainMap.widthInPixels, this.mainMap.heightInPixels);
 
-        var cursors = this.input.keyboard.createCursorKeys();
-        var controlConfig = {
+        this.cursors = this.input.keyboard.createCursorKeys();
+        const controlConfig = {
             camera: this.cameras.main,
-            left: cursors.left,
-            right: cursors.right,
-            up: cursors.up,
-            down: cursors.down,
+            left: this.cursors.left,
+            right: this.cursors.right,
+            up: this.cursors.up,
+            down: this.cursors.down,
             speed: CAMERA_SPEED
         };
         this.controls = new Phaser.Cameras.Controls.FixedKeyControl(controlConfig);
@@ -268,6 +270,8 @@ class MyGame extends Phaser.Scene
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
         ]
+
+        this.player = this.physics.add.sprite(400, 350, "princess");
 
         const isTouchDevice = navigator.maxTouchPoints > 0;
 
@@ -345,6 +349,28 @@ class MyGame extends Phaser.Scene
                 this.createInventory(this.allTiles[i]);
             }
         });
+
+        // Stop any previous movement from the last frame
+        this.player.body.setVelocity(0);
+
+        const speed = 1000 * CAMERA_SPEED;
+
+        // Horizontal movement
+        if (this.cursors.left.isDown) {
+            this.player.body.setVelocityX(-100);
+        } else if (this.cursors.right.isDown) {
+            this.player.body.setVelocityX(100);
+        }
+
+        // Vertical movement
+        if (this.cursors.up.isDown) {
+            this.player.body.setVelocityY(-100);
+        } else if (this.cursors.down.isDown) {
+            this.player.body.setVelocityY(100);
+        }
+
+        // Normalize and scale the velocity so that player can't move faster along a diagonal
+        this.player.body.velocity.normalize().scale(speed);
     }
 
     populateAutotile() {
@@ -439,6 +465,12 @@ const config = {
     backgroundColor: '#2d2d2d',
     parent: 'phaser-example',
     pixelArt: true,
+    physics: {
+        default: "arcade",
+        arcade: {
+            gravity: { y: 0 } // Top down game, so no gravity
+        }
+    },
     scene: MyGame
 };
 
