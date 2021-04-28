@@ -272,8 +272,11 @@ class MyGame extends Phaser.Scene
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
         ]
 
-        this.player = this.physics.add.sprite(400, 350, "princess");
+        this.player = this.physics.add.sprite(400, 350, "princess")
+            .setSize(20, 20)
+            .setOffset(22, 40);
         this.physics.add.collider(this.player, this.mainLayer);
+        this.physics.add.collider(this.player, this.autotileLayer);
         const anims = this.anims;
         anims.create({
             key: "player-left-walk",
@@ -430,6 +433,12 @@ class MyGame extends Phaser.Scene
                 collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Color of colliding tiles
                 faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Color of colliding face edges
             });
+
+            this.autotileLayer.renderDebug(this.debugGraphics, {
+                tileColor: null, // Color of non-colliding tiles
+                collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Color of colliding tiles
+                faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Color of colliding face edges
+            });
         }
     }
 
@@ -557,6 +566,8 @@ function updateChunk(i, j) {
 
     // TODO: Only do it for tiles that got updated
     scene.populateAutotile();
+
+    scene.autotileLayer.setCollisionBetween(scene.waterTiles.firstgid, scene.waterTiles.firstgid + scene.waterTiles.total);
 }
 
 function updatePutTileQueue() {
