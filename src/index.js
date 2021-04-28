@@ -20,6 +20,7 @@ const CONTRACT_NAME = 'lands.near';
 
 const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
 const SET_TILE_BATCH_SIZE = 10;
+const DEBUG = false;
 
 async function connectNear() {
     const APP_KEY_PREFIX = 'near-lands:'
@@ -236,17 +237,17 @@ class MyGame extends Phaser.Scene
             height: CHUNK_SIZE * CHUNK_COUNT
         });
 
-        let desertTiles = this.mainMap.addTilesetImage('desert', 'desert', 32, 32, 1, 1);
-        let grassTiles = this.mainMap.addTilesetImage('grass', 'grass', 32, 32, 0, 0, desertTiles.firstgid + desertTiles.total);
-        let waterTiles = this.mainMap.addTilesetImage('water', 'water', 32, 32, 0, 0, grassTiles.firstgid + grassTiles.total);
-        this.allTiles = [desertTiles, grassTiles, waterTiles];
-        this.lpcTiles = [grassTiles, waterTiles];
+        this.desertTiles = this.mainMap.addTilesetImage('desert', 'desert', 32, 32, 1, 1);
+        this.grassTiles = this.mainMap.addTilesetImage('grass', 'grass', 32, 32, 0, 0, this.desertTiles.firstgid + this.desertTiles.total);
+        this.waterTiles = this.mainMap.addTilesetImage('water', 'water', 32, 32, 0, 0, this.grassTiles.firstgid + this.grassTiles.total);
+        this.allTiles = [this.desertTiles, this.grassTiles, this.waterTiles];
+        this.lpcTiles = [this.grassTiles, this.waterTiles];
 
         this.mainLayer = this.mainMap.createBlankLayer('Main', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
         this.autotileLayer = this.mainMap.createBlankLayer('Main-autotile', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
         this.mainMap.setLayer(this.mainLayer);
 
-        this.createInventory(desertTiles);
+        this.createInventory(this.desertTiles);
 
         this.selectedTile = this.inventoryMap.getTileAt(5, 3);
 
@@ -272,6 +273,7 @@ class MyGame extends Phaser.Scene
         ]
 
         this.player = this.physics.add.sprite(400, 350, "princess");
+        this.physics.add.collider(this.player, this.mainLayer);
         const anims = this.anims;
         anims.create({
             key: "player-left-walk",
@@ -319,6 +321,17 @@ class MyGame extends Phaser.Scene
         }
 
         loadBoardAndDraw().catch(console.error);
+
+        // Debug graphics
+        if (DEBUG) {
+            // Turn on physics debugging to show player's hitbox
+            this.physics.world.createDebugGraphic();
+
+            // Create worldLayer collision graphic above the player, but below the help text
+            this.debugGraphics = this.add.graphics()
+                .setAlpha(0.75)
+                .setDepth(20);
+        };
     }
 
     update(time, delta) {
@@ -409,6 +422,14 @@ class MyGame extends Phaser.Scene
             else if (prevVelocity.x > 0) this.player.setTexture("princess", 27);
             else if (prevVelocity.y < 0) this.player.setTexture("princess", 0);
             else if (prevVelocity.y > 0) this.player.setTexture("princess", 18);
+        }
+
+        if (DEBUG && this.debugGraphics) {
+            this.mainLayer.renderDebug(this.debugGraphics, {
+                tileColor: null, // Color of non-colliding tiles
+                collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Color of colliding tiles
+                faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Color of colliding face edges
+            });
         }
     }
 
@@ -527,6 +548,12 @@ function updateChunk(i, j) {
     }
 
     updatePutTileQueue();
+
+    // Mark colliding tiles
+    scene.mainLayer.setCollisionBetween(45, 47);
+    scene.mainLayer.setCollisionBetween(37, 39);
+    scene.mainLayer.setCollisionBetween(30, 31);
+    scene.mainLayer.setCollisionBetween(scene.waterTiles.firstgid, scene.waterTiles.firstgid + scene.waterTiles.total);
 
     // TODO: Only do it for tiles that got updated
     scene.populateAutotile();
