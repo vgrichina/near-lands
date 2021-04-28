@@ -166,7 +166,7 @@ async function setNextPixel() {
 }
 setNextPixel().catch(console.error);
 
-const CAMERA_SPEED = 0.5;
+const PLAYER_SPEED = 0.5;
 
 class MyGame extends Phaser.Scene
 {
@@ -254,15 +254,6 @@ class MyGame extends Phaser.Scene
         this.cameras.main.setBounds(0, 0, this.mainMap.widthInPixels, this.mainMap.heightInPixels);
 
         this.cursors = this.input.keyboard.createCursorKeys();
-        const controlConfig = {
-            camera: this.cameras.main,
-            left: this.cursors.left,
-            right: this.cursors.right,
-            up: this.cursors.up,
-            down: this.cursors.down,
-            speed: CAMERA_SPEED
-        };
-        this.controls = new Phaser.Cameras.Controls.FixedKeyControl(controlConfig);
 
         this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
@@ -302,6 +293,7 @@ class MyGame extends Phaser.Scene
             frameRate: 10,
             repeat: -1
         });
+        this.cameras.main.startFollow(this.player);
 
         const isTouchDevice = navigator.maxTouchPoints > 0;
 
@@ -338,13 +330,6 @@ class MyGame extends Phaser.Scene
     }
 
     update(time, delta) {
-        this.controls.update(delta);
-
-        if (this.gamepad) {
-            this.cameras.main.scrollX += this.gamepad.joystick.properties.x / 100 * CAMERA_SPEED * delta;
-            this.cameras.main.scrollY += this.gamepad.joystick.properties.y / 100 * CAMERA_SPEED * delta;
-        }
-
         var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main);
 
         let inventoryX = this.inventoryMap.worldToTileX(worldPoint.x);
@@ -395,7 +380,12 @@ class MyGame extends Phaser.Scene
         const prevVelocity = this.player.body.velocity.clone();
         this.player.body.setVelocity(0);
 
-        const speed = 1000 * CAMERA_SPEED;
+        const speed = 1000 * PLAYER_SPEED;
+
+        if (this.gamepad) {
+            this.player.setVelocityX(this.gamepad.joystick.properties.x / 100 * speed);
+            this.player.setVelocityY(this.gamepad.joystick.properties.y / 100 * speed);
+        }
 
         // Horizontal movement
         if (this.cursors.left.isDown) {
@@ -415,8 +405,10 @@ class MyGame extends Phaser.Scene
             this.player.anims.play("player-down-walk", true);
         }
 
-        // Normalize and scale the velocity so that player can't move faster along a diagonal
-        this.player.body.velocity.normalize().scale(speed);
+        if (!this.gamepad || !this.gamepad.joystick.distance) {
+            // Normalize and scale the velocity so that player can't move faster along a diagonal
+            this.player.body.velocity.normalize().scale(speed);
+        }
 
         if (this.player.body.velocity.length() == 0) {
             // If we were moving, pick and idle frame to use
