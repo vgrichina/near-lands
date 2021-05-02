@@ -293,7 +293,8 @@ class MyGame extends Phaser.Scene
             frameRate: 10,
             repeat: -1
         });
-        this.cameras.main.startFollow(this.player);
+        const roundPixels = true;
+        this.cameras.main.startFollow(this.player, roundPixels);
 
         const isTouchDevice = navigator.maxTouchPoints > 0;
 
