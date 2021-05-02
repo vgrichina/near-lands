@@ -388,21 +388,24 @@ class MyGame extends Phaser.Scene
             this.player.setVelocityY(this.gamepad.joystick.properties.y / 100 * speed);
         }
 
-        // Horizontal movement
         if (this.cursors.left.isDown) {
             this.player.body.setVelocityX(-100);
-            this.player.anims.play("player-left-walk", true);
         } else if (this.cursors.right.isDown) {
             this.player.body.setVelocityX(100);
-            this.player.anims.play("player-right-walk", true);
         }
-
-        // Vertical movement
         if (this.cursors.up.isDown) {
             this.player.body.setVelocityY(-100);
-            this.player.anims.play("player-up-walk", true);
         } else if (this.cursors.down.isDown) {
             this.player.body.setVelocityY(100);
+        }
+
+        if (this.cursors.left.isDown) {
+            this.player.anims.play("player-left-walk", true);
+        } else if (this.cursors.right.isDown) {
+            this.player.anims.play("player-right-walk", true);
+        } else if (this.cursors.up.isDown) {
+            this.player.anims.play("player-up-walk", true);
+        } else if (this.cursors.down.isDown) {
             this.player.anims.play("player-down-walk", true);
         }
 
