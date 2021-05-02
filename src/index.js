@@ -228,6 +228,40 @@ class MyGame extends Phaser.Scene
         this.marker.strokeRect(0, 0, this.mainMap.tileWidth, this.mainMap.tileHeight);
     }
 
+    createPlayer() {
+        const player = this.physics.add.sprite(400, 350, "princess")
+            .setSize(20, 20)
+            .setOffset(22, 40);
+        this.physics.add.collider(player, this.mainLayer);
+        this.physics.add.collider(player, this.autotileLayer);
+        const anims = this.anims;
+        anims.create({
+            key: "player-left-walk",
+            frames: anims.generateFrameNumbers("princess", { frames: [9, 10, 11, 12, 13, 14, 15, 16, 17] }),
+            frameRate: 10,
+            repeat: -1
+        });
+        anims.create({
+            key: "player-right-walk",
+            frames: anims.generateFrameNumbers("princess", { frames: [27, 28, 29, 30, 31, 32, 33, 34, 35, 36] }),
+            frameRate: 10,
+            repeat: -1
+        });
+        anims.create({
+            key: "player-up-walk",
+            frames: anims.generateFrameNumbers("princess", { frames: [0, 1, 2, 3, 4, 5, 6, 7, 8] }),
+            frameRate: 10,
+            repeat: -1
+        });
+        anims.create({
+            key: "player-down-walk",
+            frames: anims.generateFrameNumbers("princess", { frames: [18, 19, 20, 21, 22, 23, 24, 25, 26] }),
+            frameRate: 10,
+            repeat: -1
+        });
+        return player;
+    }
+
     create() {
         this.input.addPointer(2);
 
@@ -263,36 +297,8 @@ class MyGame extends Phaser.Scene
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
         ]
 
-        this.player = this.physics.add.sprite(400, 350, "princess")
-            .setSize(20, 20)
-            .setOffset(22, 40);
-        this.physics.add.collider(this.player, this.mainLayer);
-        this.physics.add.collider(this.player, this.autotileLayer);
-        const anims = this.anims;
-        anims.create({
-            key: "player-left-walk",
-            frames: anims.generateFrameNumbers("princess", { frames: [9, 10, 11, 12, 13, 14, 15, 16, 17] }),
-            frameRate: 10,
-            repeat: -1
-        });
-        anims.create({
-            key: "player-right-walk",
-            frames: anims.generateFrameNumbers("princess", { frames: [27, 28, 29, 30, 31, 32, 33, 34, 35, 36] }),
-            frameRate: 10,
-            repeat: -1
-        });
-        anims.create({
-            key: "player-up-walk",
-            frames: anims.generateFrameNumbers("princess", { frames: [0, 1, 2, 3, 4, 5, 6, 7, 8] }),
-            frameRate: 10,
-            repeat: -1
-        });
-        anims.create({
-            key: "player-down-walk",
-            frames: anims.generateFrameNumbers("princess", { frames: [18, 19, 20, 21, 22, 23, 24, 25, 26] }),
-            frameRate: 10,
-            repeat: -1
-        });
+        this.player = this.createPlayer();
+
         const roundPixels = true;
         this.cameras.main.startFollow(this.player, roundPixels);
 
