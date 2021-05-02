@@ -229,9 +229,27 @@ class MyGame extends Phaser.Scene
     }
 
     createPlayer() {
-        const player = this.physics.add.sprite(400, 350, "princess")
+        const playerSprite = this.add.sprite(0, 0, "princess")
+        const nameText = this.add.text(0, 0, account.accountId, {
+            fontSize: 16,
+            fontFamily: 'sans-serif',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            padding: {
+                left: 8,
+                right: 8,
+                top: 4,
+                bottom: 4,
+            },
+        });
+        nameText.setOrigin(0.5, 2.5);
+
+        const playerContainer = this.add.container(400, 350, [playerSprite, nameText]);
+        const player = this.physics.add.existing(playerContainer);
+        player.body
             .setSize(20, 20)
-            .setOffset(22, 40);
+            .setOffset(-10, 10);
+        player.anims = playerSprite.anims;
+        player.setTexture = playerSprite.setTexture.bind(playerSprite);
         this.physics.add.collider(player, this.mainLayer);
         this.physics.add.collider(player, this.autotileLayer);
         const anims = this.anims;
