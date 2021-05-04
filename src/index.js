@@ -11,6 +11,8 @@ import { connect, WalletConnection, keyStores, Contract, Account } from 'near-ap
 
 import { VirtualGamepad } from './phaser-plugin-virtual-gamepad'
 
+import { connectP2P } from './p2p'
+
 let near;
 let walletConnection;
 let account;
@@ -39,8 +41,8 @@ async function connectNear() {
     }
 
     contract = new Contract(account, CONTRACT_NAME, {
-        viewMethods: ["getMap", "getChunk"],
-        changeMethods: ["setTiles"],
+        viewMethods: ["getMap", "getChunk", "getPeerId", "getAccountId"],
+        changeMethods: ["setTiles", "setPeerId"],
         sender: account.accountId
     });
 
@@ -61,6 +63,37 @@ const connectPromise = connectNear()
         }
     })
     .catch(console.error);
+
+const peerToAccountId = {};
+const accountIdToPlayer = {};
+const p2pPromise = (async () => {
+    const p2p = await connectP2P({
+        async locationListener({ from, x, y }) {
+            if (!peerToAccountId[from]) {
+                peerToAccountId[from] = await contract.getAccountId({ peerId: from })
+            }
+            const accountId = peerToAccountId[from];
+            console.log('location', accountId, x, y);
+
+            if (accountId) {
+                if (!accountIdToPlayer[accountId]) {
+                    const scene = game.scene.scenes[0];
+                    accountIdToPlayer[accountId] = scene.createPlayer(accountId);
+                }
+                const player = accountIdToPlayer[accountId];
+                player.setPosition(x, y);
+            }
+        }
+    });
+
+    const lastRecordedPeerId = await contract.getPeerId({ accountId: contract.account.accountId });
+    const peerId = p2p.libp2p.peerId.toB58String();
+    if (lastRecordedPeerId != peerId) {
+        await contract.setPeerId({ accountId: account.accountId, peerId })   
+    }
+
+    return p2p;
+})();
 
 async function login() {
     await connectPromise;
@@ -228,9 +261,9 @@ class MyGame extends Phaser.Scene
         this.marker.strokeRect(0, 0, this.mainMap.tileWidth, this.mainMap.tileHeight);
     }
 
-    createPlayer() {
+    createPlayer(accountId = account.accountId) {
         const playerSprite = this.add.sprite(0, 0, "princess")
-        const nameText = this.add.text(0, 0, account.accountId, {
+        const nameText = this.add.text(0, 0, accountId, {
             fontSize: 16,
             fontFamily: 'sans-serif',
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -597,5 +630,17 @@ function updatePutTileQueue() {
         scene.mainLayer.putTileAt(tileId, x, y);
     }
 }
+
+async function publishLocation() {
+    const p2p = await p2pPromise;
+    if (p2p) {
+        const scene = game.scene.scenes[0];
+        p2p.publishLocation({ x: scene.player.body.x, y: scene.player.body.y });
+    }
+
+    setTimeout(publishLocation, 500);
+};
+publishLocation();
+
 
 Object.assign(window, { login, logout, game });

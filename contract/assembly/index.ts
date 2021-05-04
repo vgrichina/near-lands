@@ -21,3 +21,17 @@ export function getChunk(x: i32, y: i32): Chunk {
 export function getMap(): i32[][] {
   return ChunkMap.get().chunks;
 }
+
+export function getPeerId(accountId: string): string | null {
+  return storage.getString('peerId:' + accountId);
+}
+
+export function getAccountId(peerId: string): string | null {
+  return storage.getString('accountId:' + peerId);
+}
+
+// TODO: Verify signature to make sure peer ID is not bogus
+export function setPeerId(accountId: string, peerId: string): void {
+  storage.setString('peerId:' + accountId, peerId);
+  storage.setString('accountId:' + peerId, accountId);
+}
