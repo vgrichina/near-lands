@@ -67,31 +67,8 @@ const connectPromise = connectNear()
 const peerToAccountId = {};
 const accountIdToPlayer = {};
 const p2pPromise = (async () => {
-    const p2p = await connectP2P({
-        async locationListener({ from, x, y }) {
-            if (!peerToAccountId[from]) {
-                peerToAccountId[from] = await contract.getAccountId({ peerId: from })
-            }
-            const accountId = peerToAccountId[from];
-            console.log('location', accountId, x, y);
-
-            if (accountId) {
-                if (!accountIdToPlayer[accountId]) {
-                    const scene = game.scene.scenes[0];
-                    accountIdToPlayer[accountId] = scene.createPlayer(accountId);
-                }
-                const player = accountIdToPlayer[accountId];
-                player.setPosition(x, y);
-            }
-        }
-    });
-
-    const lastRecordedPeerId = await contract.getPeerId({ accountId: contract.account.accountId });
-    const peerId = p2p.libp2p.peerId.toB58String();
-    if (lastRecordedPeerId != peerId) {
-        await contract.setPeerId({ accountId: account.accountId, peerId })   
-    }
-
+    const p2p = await connectP2P();
+    window.p2p = p2p;
     return p2p;
 })();
 
@@ -631,9 +608,32 @@ function updatePutTileQueue() {
     }
 }
 
+async function onLocationUpdate({ from, x, y }) {
+    if (!peerToAccountId[from]) {
+        peerToAccountId[from] = await contract.getAccountId({ peerId: from })
+    }
+    const accountId = peerToAccountId[from];
+    console.log('location', accountId, x, y);
+
+    if (accountId && accountId != account.accountId) {
+        if (!accountIdToPlayer[accountId]) {
+            const scene = game.scene.scenes[0];
+            accountIdToPlayer[accountId] = scene.createPlayer(accountId);
+        }
+        const player = accountIdToPlayer[accountId];
+        player.setPosition(x, y);
+    }
+}
+
 async function publishLocation() {
     const p2p = await p2pPromise;
     if (p2p) {
+        const lastRecordedPeerId = await contract.getPeerId({ accountId: contract.account.accountId });
+        const peerId = p2p.libp2p.peerId.toB58String();
+        if (lastRecordedPeerId != peerId) {
+            await contract.setPeerId({ accountId: account.accountId, peerId })
+        }
+
         const scene = game.scene.scenes[0];
         p2p.publishLocation({ x: scene.player.body.x, y: scene.player.body.y });
     }
@@ -642,5 +642,12 @@ async function publishLocation() {
 };
 publishLocation();
 
+// TODO: Figure out why/whether delay is needed
+setTimeout(async () => {
+    const p2p = await p2pPromise;
+    if (p2p) {
+        p2p.subscribeToLocation(onLocationUpdate);
+    }
+}, 5000);
 
-Object.assign(window, { login, logout, game });
+Object.assign(window, { login, logout, game, onLocationUpdate, publishLocation });

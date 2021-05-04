@@ -6,7 +6,7 @@ import Gossipsub from 'libp2p-gossipsub'
 import Mplex from 'libp2p-mplex'
 import Bootstrap from 'libp2p-bootstrap'
 
-export async function connectP2P({ locationListener }) {
+export async function connectP2P() {
     // Create our libp2p node
     const libp2p = await Libp2p.create({
         addresses: {
@@ -66,26 +66,22 @@ export async function connectP2P({ locationListener }) {
     await libp2p.start();
     log(`libp2p id is ${libp2p.peerId.toB58String()}`);
 
-
-    // TODO: Some more robust solution
-    // NOTE: This just waits until peers are hopefully connected
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-
-    libp2p.pubsub.subscribe('location');
-    libp2p.pubsub.on('location', ({ from, data }) => {
-        data = new TextDecoder().decode(data);
-        log(`#location ${from}: ${data}`);
-        if (locationListener) {
-            locationListener({ ...JSON.parse(data), from });
-        }
-    });
-
     // Export libp2p to the window so you can play with the API
     window.libp2p = libp2p
 
     return {
         libp2p,
+        subscribeToLocation(locationListener) {
+            log('subscribeToLocation');
+            libp2p.pubsub.subscribe('location');
+            libp2p.pubsub.on('location', ({ from, data }) => {
+                data = new TextDecoder().decode(data);
+                log(`#location ${from}: ${data}`);
+                locationListener({ ...JSON.parse(data), from });
+            });
+        },
         publishLocation({ x, y }) {
+            log(`publishLocation:  ${x}, ${y}`);
             libp2p.pubsub.publish('location', new TextEncoder().encode(JSON.stringify({ x, y })));
         }
     }
