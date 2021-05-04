@@ -32,6 +32,10 @@ export function getAccountId(peerId: string): string | null {
 
 // TODO: Verify signature to make sure peer ID is not bogus
 export function setPeerId(accountId: string, peerId: string): void {
+  const lastPeerId = getPeerId(accountId);
   storage.setString('peerId:' + accountId, peerId);
+  if (lastPeerId) {
+    storage.delete('accountId:' + lastPeerId);
+  }
   storage.setString('accountId:' + peerId, accountId);
 }
