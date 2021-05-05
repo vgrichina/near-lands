@@ -81,6 +81,7 @@ async function login() {
 async function logout() {
     await connectPromise;
 
+    localStorage.removeItem('peerId');
     walletConnection.signOut();
     window.location.reload();
 }
