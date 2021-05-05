@@ -638,7 +638,7 @@ async function publishLocation() {
         p2p.publishLocation({ x: scene.player.body.x, y: scene.player.body.y });
     }
 
-    setTimeout(publishLocation, 500);
+    setTimeout(publishLocation, 1500);
 };
 publishLocation();
 
