@@ -78,17 +78,15 @@ export async function connectP2P() {
     return {
         libp2p,
         subscribeToLocation(locationListener) {
-            log('subscribeToLocation');
             libp2p.pubsub.subscribe('location');
             libp2p.pubsub.on('location', ({ from, data }) => {
                 data = new TextDecoder().decode(data);
-                log(`#location ${from}: ${data}`);
                 locationListener({ ...JSON.parse(data), from });
             });
         },
-        publishLocation({ x, y }) {
-            log(`publishLocation:  ${x}, ${y}`);
-            libp2p.pubsub.publish('location', new TextEncoder().encode(JSON.stringify({ x, y })));
+        publishLocation(locationData) {
+            libp2p.pubsub.subscribe('location');
+            libp2p.pubsub.publish('location', new TextEncoder().encode(JSON.stringify(locationData)));
         }
     }
 }

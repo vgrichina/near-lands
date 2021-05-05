@@ -179,6 +179,8 @@ setNextPixel().catch(console.error);
 
 const PLAYER_SPEED = 0.5;
 
+const UPDATE_DELTA = 50;
+
 class MyGame extends Phaser.Scene
 {
     constructor ()
@@ -261,6 +263,7 @@ class MyGame extends Phaser.Scene
             .setOffset(-10, 10);
         player.anims = playerSprite.anims;
         player.setTexture = playerSprite.setTexture.bind(playerSprite);
+        player.playerSprite = playerSprite;
         this.physics.add.collider(player, this.mainLayer);
         this.physics.add.collider(player, this.autotileLayer);
         const anims = this.anims;
@@ -458,6 +461,16 @@ class MyGame extends Phaser.Scene
             else if (prevVelocity.y > 0) this.player.setTexture("princess", 18);
         }
 
+        for (let otherPlayer of Object.values(accountIdToPlayer)) {
+            const { targetPosition } = otherPlayer;
+            if (targetPosition) {
+                otherPlayer.setPosition(
+                    otherPlayer.x + (targetPosition.x - otherPlayer.x) / UPDATE_DELTA * delta,
+                    otherPlayer.y + (targetPosition.y - otherPlayer.y) / UPDATE_DELTA * delta,
+                );
+            }
+        }
+
         if (DEBUG && this.debugGraphics) {
             this.mainLayer.renderDebug(this.debugGraphics, {
                 tileColor: null, // Color of non-colliding tiles
@@ -609,12 +622,11 @@ function updatePutTileQueue() {
     }
 }
 
-async function onLocationUpdate({ from, x, y }) {
+async function onLocationUpdate({ from, x, y, frame, animName, animProgress }) {
     if (!peerToAccountId[from]) {
         peerToAccountId[from] = await contract.getAccountId({ peerId: from })
     }
     const accountId = peerToAccountId[from];
-    console.log('location', accountId, x, y);
 
     if (accountId && accountId != account.accountId) {
         if (!accountIdToPlayer[accountId]) {
@@ -622,7 +634,14 @@ async function onLocationUpdate({ from, x, y }) {
             accountIdToPlayer[accountId] = scene.createPlayer(accountId);
         }
         const player = accountIdToPlayer[accountId];
-        player.setPosition(x, y);
+        player.targetPosition = { x, y };
+        if (animName) {
+            player.anims.play(animName, true);
+            player.anims.setProgress(animProgress);
+        } else {
+            player.anims.stop();
+            player.playerSprite.setFrame(frame);
+        }
     }
 }
 
@@ -636,19 +655,27 @@ async function publishLocation() {
         }
 
         const scene = game.scene.scenes[0];
-        p2p.publishLocation({ x: scene.player.body.x, y: scene.player.body.y });
+        const { x, y } = scene.player.body; 
+    
+        const { anims, playerSprite } = scene.player;
+        p2p.publishLocation({ 
+            x,
+            y, 
+            frame: playerSprite.frame.name,
+            animName: anims.isPlaying && anims.getName(),
+            animProgress: anims.getProgress()
+        });
     }
 
-    setTimeout(publishLocation, 1500);
+    setTimeout(publishLocation, UPDATE_DELTA);
 };
 publishLocation();
 
-// TODO: Figure out why/whether delay is needed
-setTimeout(async () => {
+(async () => {
     const p2p = await p2pPromise;
     if (p2p) {
         p2p.subscribeToLocation(onLocationUpdate);
     }
-}, 5000);
+})().catch(console.error);
 
 Object.assign(window, { login, logout, game, onLocationUpdate, publishLocation });
