@@ -5,10 +5,15 @@ import { NOISE } from 'libp2p-noise'
 import Gossipsub from 'libp2p-gossipsub'
 import Mplex from 'libp2p-mplex'
 import Bootstrap from 'libp2p-bootstrap'
+import { createFromJSON } from 'peer-id'
 
 export async function connectP2P() {
+    const peerIdJson = localStorage.getItem('peerId');
+    const peerId = peerIdJson && (await createFromJSON(JSON.parse(peerIdJson)));
+
     // Create our libp2p node
     const libp2p = await Libp2p.create({
+        peerId,
         addresses: {
             // Add the signaling server address, along with our PeerId to our multiaddrs list
             // libp2p will automatically attempt to dial to the signaling server so that it can
@@ -65,6 +70,7 @@ export async function connectP2P() {
 
     await libp2p.start();
     log(`libp2p id is ${libp2p.peerId.toB58String()}`);
+    localStorage.setItem('peerId', JSON.stringify(libp2p.peerId));
 
     // Export libp2p to the window so you can play with the API
     window.libp2p = libp2p
