@@ -7,53 +7,22 @@ import gamepadSpritesheet from './assets/gamepad/gamepad_spritesheet.png'
 import princessSpritesheet from './assets/princess.png'
 
 import 'regenerator-runtime/runtime';
-import { connect, WalletConnection, keyStores, Contract, Account } from 'near-api-js';
 
 import { VirtualGamepad } from './phaser-plugin-virtual-gamepad'
 
 import { connectP2P } from './p2p'
-
-let near;
-let walletConnection;
-let account;
-let contract;
-
-const CONTRACT_NAME = 'lands.near';
+import { connectNear } from './near'
 
 const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
 const SET_TILE_BATCH_SIZE = 10;
 const DEBUG = false;
 
-async function connectNear() {
-    const APP_KEY_PREFIX = 'near-lands:'
-    near = await connect({
-        nodeUrl: 'https://rpc.mainnet.near.org',
-        walletUrl: 'https://wallet.near.org',
-        networkId: 'default',
-        keyStore: new keyStores.BrowserLocalStorageKeyStore(window.localStorage, APP_KEY_PREFIX)
-    })
-    walletConnection = new WalletConnection(near, APP_KEY_PREFIX)
-
-    if (walletConnection.isSignedIn()) {
-        account = walletConnection.account();
-    } else {
-        account = new Account(near.connection, CONTRACT_NAME);
-    }
-
-    contract = new Contract(account, CONTRACT_NAME, {
-        viewMethods: ["getMap", "getChunk", "getPeerId", "getAccountId"],
-        changeMethods: ["setTiles", "setPeerId"],
-        sender: account.accountId
-    });
-
-    Object.assign(window, { near, walletConnection, account, contract });
-}
-
 function $forEach(selector, fn) {
     document.querySelectorAll(selector).forEach(fn);
 }
 
-const connectPromise = connectNear()
+const connectPromise = connectNear();
+connectPromise
     .then(() => {
         if (walletConnection.isSignedIn()) {
             $forEach('.before-login', elem => elem.style.display = 'none');
@@ -61,8 +30,7 @@ const connectPromise = connectNear()
         } else {
             $forEach('.require-login', elem => elem.style.display = 'none');
         }
-    })
-    .catch(console.error);
+    });
 
 const peerToAccountId = {};
 const accountIdToPlayer = {};
@@ -73,13 +41,13 @@ const p2pPromise = (async () => {
 })();
 
 async function login() {
-    await connectPromise;
+    const { walletConnection } = await connectPromise;
 
     walletConnection.requestSignIn(CONTRACT_NAME);
 }
 
 async function logout() {
-    await connectPromise;
+    const { walletConnection } = await connectPromise;
 
     localStorage.removeItem('peerId');
     walletConnection.signOut();
@@ -92,6 +60,8 @@ const CHUNK_COUNT = 5;
 let lastMap = null;
 let fullMap = [];
 async function loadBoardAndDraw() {
+    const { contract } = await connectPromise;
+
     const map = await contract.getMap();
     for (let i = 0; i < map.length; i++) {
         if (!lastMap) {
@@ -148,6 +118,8 @@ function updateError(e) {
 }
 
 async function setNextPixel() {
+    const { contract } = await connectPromise;
+
     try {
         if (setTileQueue.length == 0) {
             return;
@@ -164,18 +136,17 @@ async function setNextPixel() {
             setTileBatch = setTileBatch.slice(0, nextChunkIndex);
         }
 
-        console.log('setTile', setTileBatch);
+        console.log('setTiles', setTileBatch);
         await contract.setTiles({ tiles: setTileBatch }, SET_TILE_GAS);
     } catch (e) {
-        console.error('Error setting pixel', e);
         updateError(e);
     } finally {
         setTileBatch = [];
         updatePending();
-        setTimeout(() => setNextPixel().catch(console.error), 50);
+        setTimeout(() => setNextPixel(), 50);
     };
 }
-setNextPixel().catch(console.error);
+setNextPixel();
 
 const PLAYER_SPEED = 0.5;
 
@@ -627,6 +598,8 @@ function updatePutTileQueue() {
 }
 
 async function onLocationUpdate({ from, x, y, frame, animName, animProgress }) {
+    const { contract } = await connectPromise;
+
     if (!peerToAccountId[from]) {
         peerToAccountId[from] = await contract.getAccountId({ peerId: from })
     }
@@ -650,12 +623,17 @@ async function onLocationUpdate({ from, x, y, frame, animName, animProgress }) {
 }
 
 async function publishLocation() {
+    const { contract } = await connectPromise;
     const p2p = await p2pPromise;
     if (p2p) {
         const lastRecordedPeerId = await contract.getPeerId({ accountId: contract.account.accountId });
         const peerId = p2p.libp2p.peerId.toB58String();
         if (lastRecordedPeerId != peerId) {
-            await contract.setPeerId({ accountId: account.accountId, peerId })
+            try {
+                await contract.setPeerId({ accountId: account.accountId, peerId })
+            } catch (e) {
+                updateError(e);
+            }
         }
 
         const scene = game.scene.scenes[0];
