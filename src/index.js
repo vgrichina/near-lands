@@ -140,6 +140,7 @@ async function setNextPixel() {
         await contract.setTiles({ tiles: setTileBatch }, SET_TILE_GAS);
     } catch (e) {
         updateError(e);
+        updateChunk(Math.floor(setTileBatch[0].x / CHUNK_SIZE), Math.floor(setTileBatch[0].y / CHUNK_SIZE));
     } finally {
         setTileBatch = [];
         updatePending();
