@@ -422,8 +422,8 @@ class MyGame extends Phaser.Scene
         const speed = 1000 * PLAYER_SPEED;
 
         if (this.gamepad) {
-            this.player.setVelocityX(this.gamepad.joystick.properties.x / 100 * speed);
-            this.player.setVelocityY(this.gamepad.joystick.properties.y / 100 * speed);
+            this.player.body.setVelocityX(this.gamepad.joystick.properties.x / 100 * speed);
+            this.player.body.setVelocityY(this.gamepad.joystick.properties.y / 100 * speed);
         }
 
         if (this.cursors.left.isDown) {
@@ -437,14 +437,18 @@ class MyGame extends Phaser.Scene
             this.player.body.setVelocityY(100);
         }
 
-        if (this.cursors.left.isDown) {
-            this.player.anims.play("player-left-walk", true);
-        } else if (this.cursors.right.isDown) {
-            this.player.anims.play("player-right-walk", true);
-        } else if (this.cursors.up.isDown) {
-            this.player.anims.play("player-up-walk", true);
-        } else if (this.cursors.down.isDown) {
-            this.player.anims.play("player-down-walk", true);
+        if (Math.abs(this.player.body.velocity.y) < Math.abs(this.player.body.velocity.x)) {
+            if (this.player.body.velocity.x < 0) {
+                this.player.anims.play("player-left-walk", true);
+            } else if (this.player.body.velocity.x > 0) {
+                this.player.anims.play("player-right-walk", true);
+            }
+        } else {
+            if (this.player.body.velocity.y < 0) {
+                this.player.anims.play("player-up-walk", true);
+            } else if (this.player.body.velocity.y > 0) {
+                this.player.anims.play("player-down-walk", true);
+            }
         }
 
         if (!this.gamepad || !this.gamepad.joystick.distance) {
