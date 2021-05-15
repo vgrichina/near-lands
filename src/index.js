@@ -11,7 +11,7 @@ import 'regenerator-runtime/runtime';
 import { VirtualGamepad } from './phaser-plugin-virtual-gamepad'
 
 import { connectP2P } from './p2p'
-import { connectNear } from './near'
+import { connectNear, updateAccessKeyIfNeeded } from './near'
 
 const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
 const SET_TILE_BATCH_SIZE = 10;
@@ -110,7 +110,7 @@ function updatePending() {
 }
 
 function updateError(e) {
-    console.log('updateError', e);
+    console.error('updateError', e);
     $forEach('.error', elem => {
         elem.innerHTML = `Last error: ${e}`;
         elem.style.display = 'inline';
@@ -118,7 +118,7 @@ function updateError(e) {
 }
 
 async function setNextPixel() {
-    const { contract } = await connectPromise;
+    const { account, contract } = await connectPromise;
 
     try {
         if (setTileQueue.length == 0) {
@@ -141,6 +141,7 @@ async function setNextPixel() {
     } catch (e) {
         updateError(e);
         updateChunk(Math.floor(setTileBatch[0].x / CHUNK_SIZE), Math.floor(setTileBatch[0].y / CHUNK_SIZE));
+        await updateAccessKeyIfNeeded(account, e);
     } finally {
         setTileBatch = [];
         updatePending();
@@ -634,6 +635,7 @@ async function publishLocation() {
                 await contract.setPeerId({ accountId: account.accountId, peerId })
             } catch (e) {
                 updateError(e);
+                await updateAccessKeyIfNeeded(account, e);
             }
         }
 

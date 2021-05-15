@@ -1,6 +1,9 @@
-import { connect, WalletConnection, keyStores, Contract, Account } from 'near-api-js';
+import { connect, WalletConnection, keyStores, Contract, Account, transactions, utils } from 'near-api-js';
+const { addKey, deleteKey, functionCallAccessKey } = transactions;
+import BN from 'bn.js'
 
 const CONTRACT_NAME = 'lands.near';
+const DESIRED_ALLOWANCE = new BN(utils.format.parseNearAmount('0.5'));
 
 export async function connectNear() {
     const APP_KEY_PREFIX = 'near-lands:'
@@ -30,3 +33,14 @@ export async function connectNear() {
     return result;
 }
 
+export async function updateAccessKeyIfNeeded(account, e) {
+    if (e.type == 'NotEnoughAllowance') {
+        const { accountId, connection } = account;
+        const publicKey = await connection.signer.getPublicKey(accountId, connection.networkId);
+        console.log('publicKey', publicKey);
+        await account.signAndSendTransaction(accountId, [
+            deleteKey(publicKey),
+            addKey(publicKey, functionCallAccessKey(CONTRACT_NAME, [], DESIRED_ALLOWANCE))
+        ]);
+    }
+}
