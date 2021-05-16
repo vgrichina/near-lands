@@ -151,8 +151,6 @@ async function setNextPixel() {
 }
 setNextPixel();
 
-const PLAYER_SPEED = 0.5;
-
 const UPDATE_DELTA = 50;
 
 class MyGame extends Phaser.Scene
@@ -161,11 +159,10 @@ class MyGame extends Phaser.Scene
     {
         super();
 
-        Phaser.GameObjects.GameObjectFactory.register('player', function ({ accountId, x, y }) {
-            const player = new Player({ scene: this.scene, x, y, accountId })
+        Phaser.GameObjects.GameObjectFactory.register('player', function ({ accountId, x, y, controlledByUser = false }) {
+            const player = new Player({ scene: this.scene, x, y, accountId, controlledByUser })
             this.displayList.add(player);
-            // TODO: Implement player.preUpdate
-            // this.updateList.add(player);
+            this.updateList.add(player);
             return player;
         });
     }
@@ -258,7 +255,7 @@ class MyGame extends Phaser.Scene
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
         ]
 
-        this.player = this.add.player({ scene: this, x: 400, y: 300, accountId: account.accountId });
+        this.player = this.add.player({ scene: this, x: 400, y: 300, accountId: account.accountId, controlledByUser: true });
 
         const roundPixels = true;
         this.cameras.main.startFollow(this.player, roundPixels);
@@ -343,66 +340,6 @@ class MyGame extends Phaser.Scene
                 this.createInventory(this.allTiles[i]);
             }
         });
-
-        // Stop any previous movement from the last frame
-        const prevVelocity = this.player.body.velocity.clone();
-        this.player.body.setVelocity(0);
-
-        const speed = 1000 * PLAYER_SPEED;
-
-        if (this.gamepad) {
-            this.player.body.setVelocityX(this.gamepad.joystick.properties.x / 100 * speed);
-            this.player.body.setVelocityY(this.gamepad.joystick.properties.y / 100 * speed);
-        }
-
-        if (this.cursors.left.isDown) {
-            this.player.body.setVelocityX(-100);
-        } else if (this.cursors.right.isDown) {
-            this.player.body.setVelocityX(100);
-        }
-        if (this.cursors.up.isDown) {
-            this.player.body.setVelocityY(-100);
-        } else if (this.cursors.down.isDown) {
-            this.player.body.setVelocityY(100);
-        }
-
-        if (Math.abs(this.player.body.velocity.y) < Math.abs(this.player.body.velocity.x)) {
-            if (this.player.body.velocity.x < 0) {
-                this.player.anims.play("player-left-walk", true);
-            } else if (this.player.body.velocity.x > 0) {
-                this.player.anims.play("player-right-walk", true);
-            }
-        } else {
-            if (this.player.body.velocity.y < 0) {
-                this.player.anims.play("player-up-walk", true);
-            } else if (this.player.body.velocity.y > 0) {
-                this.player.anims.play("player-down-walk", true);
-            }
-        }
-
-        if (!this.gamepad || !this.gamepad.joystick.distance) {
-            // Normalize and scale the velocity so that player can't move faster along a diagonal
-            this.player.body.velocity.normalize().scale(speed);
-        }
-
-        if (this.player.body.velocity.length() == 0) {
-            // If we were moving, pick and idle frame to use
-            this.player.anims.stop();
-            if (prevVelocity.x < 0) this.player.setTexture("princess", 9);
-            else if (prevVelocity.x > 0) this.player.setTexture("princess", 27);
-            else if (prevVelocity.y < 0) this.player.setTexture("princess", 0);
-            else if (prevVelocity.y > 0) this.player.setTexture("princess", 18);
-        }
-
-        for (let otherPlayer of Object.values(accountIdToPlayer)) {
-            const { targetPosition } = otherPlayer;
-            if (targetPosition) {
-                otherPlayer.setPosition(
-                    otherPlayer.x + (targetPosition.x - otherPlayer.x) / UPDATE_DELTA * delta,
-                    otherPlayer.y + (targetPosition.y - otherPlayer.y) / UPDATE_DELTA * delta,
-                );
-            }
-        }
 
         if (DEBUG && this.debugGraphics) {
             this.mainLayer.renderDebug(this.debugGraphics, {
