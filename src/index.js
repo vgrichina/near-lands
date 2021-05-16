@@ -11,7 +11,7 @@ import 'regenerator-runtime/runtime';
 import { VirtualGamepad } from './phaser-plugin-virtual-gamepad'
 
 import { connectP2P } from './p2p'
-import { connectNear } from './near'
+import { connectNear, CONTRACT_NAME } from './near'
 
 const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
 const SET_TILE_BATCH_SIZE = 10;
