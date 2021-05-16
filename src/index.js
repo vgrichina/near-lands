@@ -13,7 +13,7 @@ import { VirtualGamepad } from './phaser-plugin-virtual-gamepad'
 import { connectP2P } from './p2p'
 import { connectNear, CONTRACT_NAME } from './near'
 
-import { Player } from './player'
+import { Player, UPDATE_DELTA } from './player'
 
 const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
 const SET_TILE_BATCH_SIZE = 10;
@@ -151,7 +151,6 @@ async function setNextPixel() {
 }
 setNextPixel();
 
-const UPDATE_DELTA = 50;
 
 class MyGame extends Phaser.Scene
 {

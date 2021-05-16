@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 
 const PLAYER_SPEED = 0.5;
 
+export const UPDATE_DELTA = 50;
+
 export class Player extends Phaser.GameObjects.Container {
     constructor({ scene, x, y, accountId, controlledByUser }) {
         const playerSprite = scene.add.sprite(0, 0, "princess")
@@ -75,8 +77,8 @@ export class Player extends Phaser.GameObjects.Container {
     preUpdate(time, delta) {
         if (this.targetPosition) {
             this.setPosition(
-                this.x + (targetPosition.x - this.x) / UPDATE_DELTA * delta,
-                this.y + (targetPosition.y - this.y) / UPDATE_DELTA * delta,
+                this.x + (this.targetPosition.x - this.x) / UPDATE_DELTA * delta,
+                this.y + (this.targetPosition.y - this.y) / UPDATE_DELTA * delta,
             );
         }
 
