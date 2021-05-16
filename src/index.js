@@ -13,6 +13,8 @@ import { VirtualGamepad } from './phaser-plugin-virtual-gamepad'
 import { connectP2P } from './p2p'
 import { connectNear, CONTRACT_NAME } from './near'
 
+import { Player } from './player'
+
 const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
 const SET_TILE_BATCH_SIZE = 10;
 const DEBUG = false;
@@ -158,6 +160,14 @@ class MyGame extends Phaser.Scene
     constructor ()
     {
         super();
+
+        Phaser.GameObjects.GameObjectFactory.register('player', function ({ accountId, x, y }) {
+            const player = new Player({ scene: this.scene, x, y, accountId })
+            this.displayList.add(player);
+            // TODO: Implement player.preUpdate
+            // this.updateList.add(player);
+            return player;
+        });
     }
 
     preload() {
@@ -213,59 +223,6 @@ class MyGame extends Phaser.Scene
         this.marker.strokeRect(0, 0, this.mainMap.tileWidth, this.mainMap.tileHeight);
     }
 
-    createPlayer(accountId = account.accountId) {
-        const playerSprite = this.add.sprite(0, 0, "princess")
-        const nameText = this.add.text(0, 0, accountId, {
-            fontSize: 16,
-            fontFamily: 'sans-serif',
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            padding: {
-                left: 8,
-                right: 8,
-                top: 4,
-                bottom: 4,
-            },
-        });
-        nameText.setOrigin(0.5, 2.5);
-
-        const playerContainer = this.add.container(400, 350, [playerSprite, nameText]);
-        const player = this.physics.add.existing(playerContainer);
-        player.body
-            .setSize(20, 20)
-            .setOffset(-10, 10);
-        player.anims = playerSprite.anims;
-        player.setTexture = playerSprite.setTexture.bind(playerSprite);
-        player.playerSprite = playerSprite;
-        this.physics.add.collider(player, this.mainLayer);
-        this.physics.add.collider(player, this.autotileLayer);
-        const anims = this.anims;
-        anims.create({
-            key: "player-left-walk",
-            frames: anims.generateFrameNumbers("princess", { frames: [9, 10, 11, 12, 13, 14, 15, 16, 17] }),
-            frameRate: 10,
-            repeat: -1
-        });
-        anims.create({
-            key: "player-right-walk",
-            frames: anims.generateFrameNumbers("princess", { frames: [27, 28, 29, 30, 31, 32, 33, 34, 35, 36] }),
-            frameRate: 10,
-            repeat: -1
-        });
-        anims.create({
-            key: "player-up-walk",
-            frames: anims.generateFrameNumbers("princess", { frames: [0, 1, 2, 3, 4, 5, 6, 7, 8] }),
-            frameRate: 10,
-            repeat: -1
-        });
-        anims.create({
-            key: "player-down-walk",
-            frames: anims.generateFrameNumbers("princess", { frames: [18, 19, 20, 21, 22, 23, 24, 25, 26] }),
-            frameRate: 10,
-            repeat: -1
-        });
-        return player;
-    }
-
     create() {
         this.input.addPointer(2);
 
@@ -301,7 +258,7 @@ class MyGame extends Phaser.Scene
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
         ]
 
-        this.player = this.createPlayer();
+        this.player = this.add.player({ scene: this, x: 400, y: 300, accountId: account.accountId });
 
         const roundPixels = true;
         this.cameras.main.startFollow(this.player, roundPixels);
@@ -609,17 +566,10 @@ async function onLocationUpdate({ from, x, y, frame, animName, animProgress }) {
     if (accountId && accountId != account.accountId) {
         if (!accountIdToPlayer[accountId]) {
             const scene = game.scene.scenes[0];
-            accountIdToPlayer[accountId] = scene.createPlayer(accountId);
+            accountIdToPlayer[accountId] = scene.add.player({ scene, x, y, accountId });
         }
         const player = accountIdToPlayer[accountId];
-        player.targetPosition = { x, y };
-        if (animName) {
-            player.anims.play(animName, true);
-            player.anims.setProgress(animProgress);
-        } else {
-            player.anims.stop();
-            player.playerSprite.setFrame(frame);
-        }
+        player.updateFromRemote({ x, y, frame, animName, animProgress });
     }
 }
 
@@ -638,12 +588,12 @@ async function publishLocation() {
         }
 
         const scene = game.scene.scenes[0];
-        const { x, y } = scene.player.body; 
-    
+        const { x, y } = scene.player.body;
+
         const { anims, playerSprite } = scene.player;
-        p2p.publishLocation({ 
+        p2p.publishLocation({
             x,
-            y, 
+            y,
             frame: playerSprite.frame.name,
             animName: anims.isPlaying && anims.getName(),
             animProgress: anims.getProgress()
