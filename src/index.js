@@ -34,14 +34,7 @@ connectPromise
         }
     });
 
-const peerToAccountId = {};
 const accountIdToPlayer = {};
-const p2pPromise = (async () => {
-    const p2p = await connectP2P();
-    window.p2p = p2p;
-    return p2p;
-})();
-
 async function login() {
     const { walletConnection } = await connectPromise;
 
@@ -491,39 +484,40 @@ function updatePutTileQueue() {
     }
 }
 
-async function onLocationUpdate({ from, x, y, frame, animName, animProgress }) {
-    const { contract } = await connectPromise;
-
-    if (!peerToAccountId[from]) {
-        peerToAccountId[from] = await contract.getAccountId({ peerId: from })
+async function onLocationUpdate({ accountId, x, y, frame, animName, animProgress }) {
+    if (accountId && accountId == account.accountId) {
+        return;
     }
-    const accountId = peerToAccountId[from];
 
-    if (accountId && accountId != account.accountId) {
-        if (!accountIdToPlayer[accountId]) {
-            const scene = game.scene.scenes[0];
-            accountIdToPlayer[accountId] = scene.add.player({ scene, x, y, accountId });
-        }
-        const player = accountIdToPlayer[accountId];
-        player.updateFromRemote({ x, y, frame, animName, animProgress });
+    if (!accountIdToPlayer[accountId]) {
+        const scene = game.scene.scenes[0];
+        accountIdToPlayer[accountId] = scene.add.player({ scene, x, y, accountId });
+    }
+    const player = accountIdToPlayer[accountId];
+    player.updateFromRemote({ x, y, frame, animName, animProgress });
+}
+
+let p2p
+async function connectP2PIfNeeded() {
+    const { contract } = await connectPromise;
+    if (!p2p) {
+        p2p = await connectP2P({ accountId: contract.account.accountId });
+        window.p2p = p2p;
     }
 }
 
 async function publishLocation() {
-    const { contract } = await connectPromise;
-    const p2p = await p2pPromise;
-    if (p2p) {
-        const lastRecordedPeerId = await contract.getPeerId({ accountId: contract.account.accountId });
-        const peerId = p2p.libp2p.peerId.toB58String();
-        if (lastRecordedPeerId != peerId) {
-            try {
-                await contract.setPeerId({ accountId: account.accountId, peerId })
-            } catch (e) {
-                updateError(e);
-            }
+    try {
+        await connectP2PIfNeeded();
+        if (!p2p) {
+            return;
         }
 
         const scene = game.scene.scenes[0];
+        if (!scene || !scene.player) {
+            return;
+        }
+
         const { x, y } = scene.player.body;
 
         const { anims, playerSprite } = scene.player;
@@ -534,17 +528,19 @@ async function publishLocation() {
             animName: anims.isPlaying && anims.getName(),
             animProgress: anims.getProgress()
         });
+    } finally {
+        setTimeout(publishLocation, UPDATE_DELTA);
     }
-
-    setTimeout(publishLocation, UPDATE_DELTA);
 };
 publishLocation();
 
 (async () => {
-    const p2p = await p2pPromise;
-    if (p2p) {
-        p2p.subscribeToLocation(onLocationUpdate);
+    await connectP2PIfNeeded();
+    if (!p2p) {
+        console.error("Couldn't subscribe to location updates");
+        return;
     }
+    p2p.subscribeToLocation(onLocationUpdate);
 })().catch(console.error);
 
 Object.assign(window, { login, logout, game, onLocationUpdate, publishLocation });
