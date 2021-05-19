@@ -17,6 +17,8 @@ export class Player extends Phaser.GameObjects.Container {
                 top: 4,
                 bottom: 4,
             },
+            // NOTE: Specifying height explicitly to avoid non-round pixels when combined with origin
+            fixedHeight: 28
         });
         nameText.setOrigin(0.5, 2.5);
 
