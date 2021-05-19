@@ -12,6 +12,11 @@ export async function connectP2P({ accountId }) {
         // TODO: Tune options
     }); 
 
+    // TODO: Unhardcode this
+    if (accountId == 'lands.near') {
+        accountId = swarm.me;
+    }
+
     // TODO: Sign and verify
 
     // TODO: Support channel subscriptions, route messages through peers?
