@@ -4,8 +4,8 @@
   "description": "A Phaser 3 Project Template",
   "main": "src/index.js",
   "scripts": {
-    "build": "webpack --config webpack/prod.js ",
-    "start": "webpack-dev-server --config webpack/base.js",
+    "build": "parcel build index.html",
+    "start": "parcel index.html",
     "build:contract": "cd contract && npm run build:release",
     "build:contract:debug": "cd contract && npm run build:debug",
     "dev:deploy:contract": "near dev-deploy --wasmFile contract/build/debug/lands.wasm",
@@ -24,18 +24,9 @@
   },
   "homepage": "https://github.com/photonstorm/phaser3-project-template#readme",
   "devDependencies": {
-    "@babel/core": "^7.7.2",
-    "@babel/preset-env": "^7.7.1",
-    "babel-loader": "^8.0.6",
-    "clean-webpack-plugin": "^3.0.0",
-    "file-loader": "^4.2.0",
-    "html-webpack-plugin": "^3.2.0",
-    "raw-loader": "^3.1.0",
-    "terser-webpack-plugin": "^2.2.1",
-    "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.10",
-    "webpack-dev-server": "^3.9.0",
-    "webpack-merge": "^4.2.2"
+    "@parcel/transformer-babel": "^2.0.0-alpha.3",
+    "@parcel/transformer-image": "^2.0.0-beta.2",
+    "parcel": "^2.0.0-beta.2"
   },
   "dependencies": {
     "libp2p": "^0.31.2",

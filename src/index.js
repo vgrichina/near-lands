@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
 
-import desertTilesImg from './assets/tilemaps/tiles/tmw_desert_spacing.png';
-import grassTilesImg from './assets/tilemaps/tiles/grass.png';
-import waterTilesImg from './assets/tilemaps/tiles/water.png';
-import gamepadSpritesheet from './assets/gamepad/gamepad_spritesheet.png'
-import princessSpritesheet from './assets/princess.png'
+import desertTilesImg from 'url:~src/assets/tilemaps/tiles/tmw_desert_spacing.png';
+import grassTilesImg from 'url:~src/assets/tilemaps/tiles/grass.png';
+import waterTilesImg from 'url:~src/assets/tilemaps/tiles/water.png';
+import gamepadSpritesheet from 'url:~src/assets/gamepad/gamepad_spritesheet.png'
+import princessSpritesheet from 'url:~src/assets/princess.png'
 
 import 'regenerator-runtime/runtime';
 
