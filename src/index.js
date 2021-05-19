@@ -518,7 +518,7 @@ async function publishLocation() {
             return;
         }
 
-        const { x, y } = scene.player.body;
+        const { x, y } = scene.player;
 
         const { anims, playerSprite } = scene.player;
         p2p.publishLocation({
