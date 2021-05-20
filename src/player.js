@@ -21,7 +21,9 @@ export class Player extends Phaser.GameObjects.Container {
                 bottom: 4,
             },
             // NOTE: Specifying height explicitly to avoid non-round pixels when combined with origin
-            fixedHeight: 28
+            fixedHeight: 28,
+            // NOTE: Looks like Brave needs explicit line height
+            lineHeight: 28
         });
         nameText.setOrigin(0.5, 2.5);
 

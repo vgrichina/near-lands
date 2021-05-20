@@ -259,7 +259,9 @@ class MyGame extends Phaser.Scene
                 fontSize: '18px',
                 padding: { x: 10, y: 5 },
                 backgroundColor: '#000000',
-                fill: '#ffffff'
+                fill: '#ffffff',
+                // NOTE: Looks like Brave needs explicit line height
+                lineHeight: 28
             });
             help.setScrollFactor(0);
             help.setAlpha(0.75);
