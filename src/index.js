@@ -6,6 +6,10 @@ import waterTilesImg from 'url:~src/assets/tilemaps/tiles/water.png';
 import gamepadSpritesheet from 'url:~src/assets/gamepad/gamepad_spritesheet.png'
 import princessSpritesheet from 'url:~src/assets/princess.png'
 
+import femaleBodyLightSpritesheet from 'url:~src/assets/lpc-character/body/female/light.png'
+import femaleDressSpritesheet from 'url:~src/assets/lpc-character/torso/dress_female/dress_w_sash_female.png'
+import femaleHairLonghawkBrunetteSpritesheet from 'url:~src/assets/lpc-character/hair/female/longhawk/brunette.png'
+
 import 'regenerator-runtime/runtime';
 
 import { VirtualGamepad } from './phaser-plugin-virtual-gamepad'
@@ -165,7 +169,10 @@ class MyGame extends Phaser.Scene
         this.load.image('water', waterTilesImg);
 
         this.load.spritesheet({ key: 'gamepad', url: gamepadSpritesheet, frameConfig: { frameWidth: 100, frameHeight: 100 } });
-        this.load.spritesheet({ key: 'princess', url: princessSpritesheet, frameConfig: { frameWidth: 64, frameHeight: 64 }})
+        this.load.spritesheet({ key: 'princess', url: princessSpritesheet, frameConfig: { frameWidth: 64, frameHeight: 64 }});
+        this.load.spritesheet({ key: 'body-female-light', url: femaleBodyLightSpritesheet, frameConfig: { frameWidth: 64, frameHeight: 64 }});
+        this.load.spritesheet({ key: 'torso-female-dress', url: femaleDressSpritesheet, frameConfig: { frameWidth: 64, frameHeight: 64 }});
+        this.load.spritesheet({ key: 'hair-female-longhawk-brunette', url: femaleHairLonghawkBrunetteSpritesheet, frameConfig: { frameWidth: 64, frameHeight: 64 }});
     }
 
     createInventory(tiles) {

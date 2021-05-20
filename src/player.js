@@ -3,12 +3,15 @@ import Phaser from 'phaser';
 const PLAYER_SPEED = 0.5;
 
 export const UPDATE_DELTA = 50;
+export const FRAMES_PER_ROW = 13;
+export const FRAMES_PER_ROW_ANIM = 9;
 
 export class Player extends Phaser.GameObjects.Container {
     constructor({ scene, x, y, accountId, controlledByUser }) {
         const playerSprites = [
-            // scene.add.sprite(0, 0, 'body-female-light')
-            scene.add.sprite(0, 0, 'princess')
+            scene.add.sprite(0, 0, 'body-female-light'),
+            scene.add.sprite(0, 0, 'torso-female-dress'),
+            scene.add.sprite(0, 0, 'hair-female-longhawk-brunette'),
         ];
         const nameText = scene.add.text(0, 0, accountId, {
             fontSize: 16,
@@ -45,7 +48,9 @@ export class Player extends Phaser.GameObjects.Container {
 
         const range = (start, end) => Array.from({length: (end - start)}, (v, k) => k + start);
     
-        function createAnim(key, imageKey, i, start, end) {
+        function createAnim(key, imageKey, i, row) {
+            const start = row * FRAMES_PER_ROW;
+            const end = row * FRAMES_PER_ROW + FRAMES_PER_ROW_ANIM;
             anims.create({
                 key: `${key}-${i}`,
                 frames: anims.generateFrameNumbers(imageKey, { frames: range(start, end) }),
@@ -56,10 +61,10 @@ export class Player extends Phaser.GameObjects.Container {
 
         playerSprites.forEach((sprite, i) => {
             const imageKey = sprite.texture.key;
-            createAnim('player-left-walk', imageKey, i, 9, 17);
-            createAnim('player-right-walk', imageKey, i, 27, 36);
-            createAnim('player-up-walk', imageKey, i, 0, 8);
-            createAnim('player-down-walk', imageKey, i, 18, 26);
+            createAnim('player-up-walk', imageKey, i, 8);
+            createAnim('player-left-walk', imageKey, i, 9);
+            createAnim('player-down-walk', imageKey, i, 10);
+            createAnim('player-right-walk', imageKey, i, 11);
         });
     }
 
@@ -154,10 +159,15 @@ export class Player extends Phaser.GameObjects.Container {
         if (this.body.velocity.length() == 0) {
             // If we were moving, pick and idle frame to use
             this.stopAnims();
-            if (prevVelocity.x < 0) this.setSpriteFrame(9);
-            else if (prevVelocity.x > 0) this.setSpriteFrame(27);
-            else if (prevVelocity.y < 0) this.setSpriteFrame(0);
-            else if (prevVelocity.y > 0) this.setSpriteFrame(18);
+            if (prevVelocity.y < 0) {
+                this.setSpriteFrame(FRAMES_PER_ROW * 8);
+            } else if (prevVelocity.x < 0) {
+                this.setSpriteFrame(FRAMES_PER_ROW * 9);
+            } else if (prevVelocity.y > 0) {
+                this.setSpriteFrame(FRAMES_PER_ROW * 10);
+            } else if (prevVelocity.x > 0) {
+                this.setSpriteFrame(FRAMES_PER_ROW * 11);
+            }
         }
     }
 }
