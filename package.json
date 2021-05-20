@@ -32,9 +32,6 @@
     "regenerator-runtime": "^0.13.7",
     "signalhub": "^4.9.0",
     "simple-peer": "^9.11.0",
-    "webrtc-swarm": "^2.9.0"
-  },
-  "resolutions": {
-    "simple-peer": "9.11.0"
+    "webrtc-swarm": "https://github.com/vgrichina/webrtc-swarm.git"
   }
 }
