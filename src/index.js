@@ -521,7 +521,7 @@ async function publishLocation() {
 
         const { x, y } = scene.player;
 
-        const { anims, playerSprite } = scene.player;
+        const { playerSprites: [{ anims, ...playerSprite }] } = scene.player;
         p2p.publishLocation({
             x,
             y,

@@ -6,7 +6,9 @@ export const UPDATE_DELTA = 50;
 
 export class Player extends Phaser.GameObjects.Container {
     constructor({ scene, x, y, accountId, controlledByUser }) {
-        const playerSprite = scene.add.sprite(0, 0, "princess")
+        const playerSprites = [
+            scene.add.sprite(0, 0, "princess")
+        ];
         const nameText = scene.add.text(0, 0, accountId, {
             fontSize: 16,
             fontFamily: 'sans-serif',
@@ -22,7 +24,7 @@ export class Player extends Phaser.GameObjects.Container {
         });
         nameText.setOrigin(0.5, 2.5);
 
-        super(scene, x, y, [playerSprite, nameText]);
+        super(scene, x, y, [...playerSprites, nameText]);
 
         this.controlledByUser = controlledByUser;
 
@@ -31,13 +33,11 @@ export class Player extends Phaser.GameObjects.Container {
             .setSize(20, 20)
             .setOffset(-10, 10);
 
-        this.setTexture = playerSprite.setTexture.bind(playerSprite);
-        this.playerSprite = playerSprite;
+        this.playerSprites = playerSprites;
 
         scene.physics.add.collider(this, scene.mainLayer);
         scene.physics.add.collider(this, scene.autotileLayer);
 
-        this.anims = playerSprite.anims;
         const anims = scene.anims;
         anims.create({
             key: "player-left-walk",
@@ -68,11 +68,35 @@ export class Player extends Phaser.GameObjects.Container {
     updateFromRemote({ x, y, frame, animName, animProgress }) {
         this.targetPosition = { x, y };
         if (animName) {
-            this.anims.play(animName, true);
-            this.anims.setProgress(animProgress);
+            this.play(animName, true);
+            this.setAnimProgress(animProgress);
         } else {
-            this.anims.stop();
-            this.playerSprite.setFrame(frame);
+            this.stopAnims();
+            this.setSpriteFrame(frame);
+        }
+    }
+
+    stopAnims() {
+        for (let sprite of this.playerSprites) {
+            sprite.anims.stop();
+        }
+    }
+
+    setSpriteFrame(frame) {
+        for (let sprite of this.playerSprites) {
+            sprite.setFrame(frame);
+        }
+    }
+
+    setAnimProgress(animProgress) {
+        for (let sprite of this.playerSprites) {
+            sprite.anims.setProgress(animProgress);
+        }
+    }
+
+    play(animName) {
+        for (let sprite of this.playerSprites) {
+            sprite.play(animName);
         }
     }
 
@@ -112,15 +136,15 @@ export class Player extends Phaser.GameObjects.Container {
 
         if (Math.abs(this.body.velocity.y) < Math.abs(this.body.velocity.x)) {
             if (this.body.velocity.x < 0) {
-                this.anims.play("player-left-walk", true);
+                this.play("player-left-walk", true);
             } else if (this.body.velocity.x > 0) {
-                this.anims.play("player-right-walk", true);
+                this.play("player-right-walk", true);
             }
         } else {
             if (this.body.velocity.y < 0) {
-                this.anims.play("player-up-walk", true);
+                this.play("player-up-walk", true);
             } else if (this.body.velocity.y > 0) {
-                this.anims.play("player-down-walk", true);
+                this.play("player-down-walk", true);
             }
         }
 
@@ -131,11 +155,11 @@ export class Player extends Phaser.GameObjects.Container {
 
         if (this.body.velocity.length() == 0) {
             // If we were moving, pick and idle frame to use
-            this.anims.stop();
-            if (prevVelocity.x < 0) this.setTexture("princess", 9);
-            else if (prevVelocity.x > 0) this.setTexture("princess", 27);
-            else if (prevVelocity.y < 0) this.setTexture("princess", 0);
-            else if (prevVelocity.y > 0) this.setTexture("princess", 18);
+            this.stopAnims();
+            if (prevVelocity.x < 0) this.setSpriteFrame(9);
+            else if (prevVelocity.x > 0) this.setSpriteFrame(27);
+            else if (prevVelocity.y < 0) this.setSpriteFrame(0);
+            else if (prevVelocity.y > 0) this.setSpriteFrame(18);
         }
     }
 }
