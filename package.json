@@ -4,6 +4,7 @@
   "description": "A Phaser 3 Project Template",
   "scripts": {
     "build": "parcel build index.html --dist-dir dist/",
+    "postbuild": "cp -R static/* dist/",
     "start": "parcel index.html",
     "build:contract": "cd contract && npm run build:release",
     "build:contract:debug": "cd contract && npm run build:debug",
