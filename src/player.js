@@ -80,31 +80,44 @@ function randomLayers() {
     return layers.map(layer => `/lpc-character/${layer}.png`);
 }
 
+function createAnim(scene, key, imageKey, i, row) {
+    const { anims } = scene;
+    const start = row * FRAMES_PER_ROW;
+    const end = row * FRAMES_PER_ROW + FRAMES_PER_ROW_ANIM;
+    const animKey = `${key}-${imageKey}-${i}`;
+    anims.remove(animKey);
+    anims.create({
+        key: animKey,
+        frames: anims.generateFrameNumbers(imageKey, { frames: range(start, end) }),
+        frameRate: 10,
+        repeat: -1
+    });
+}
+
+function createSprites(scene, layers) {
+    const playerSprites = layers.map(layer => scene.add.sprite(0, 0, layer))
+    playerSprites.forEach((sprite, i) => {
+        const imageKey = sprite.texture.key;
+        createAnim(scene, 'player-up-walk', imageKey, i, 8);
+        createAnim(scene, 'player-left-walk', imageKey, i, 9);
+        createAnim(scene, 'player-down-walk', imageKey, i, 10);
+        createAnim(scene, 'player-right-walk', imageKey, i, 11);
+    });
+    return playerSprites;
+}
+
+function arrayEquals(a, b) {
+    return Array.isArray(a) &&
+        Array.isArray(b) &&
+        a.length === b.length &&
+        a.every((val, index) => val === b[index]);
+}
+
+const allLoaded = (scene, layers) => layers.every(layer => scene.textures.exists(layer));
+
 export class Player extends Phaser.GameObjects.Container {
-    constructor({ scene, x, y, accountId, controlledByUser }) {
-        const layers = randomLayers();
-        console.log('layers', layers);
-        
-        for (let layer of layers) {
-            scene.load.spritesheet({ key: layer, url: layer, frameConfig: { frameWidth: 64, frameHeight: 64 }});
-        }
-        scene.load.once(Phaser.Loader.Events.COMPLETE, () => {
-            if (this.playerSprites[0].texture.key == 'skeleton') {
-                this.remove(this.playerSprites[0]);
-                this.playerSprites = createSprites(layers);
-                this.add(this.playerSprites);
-            }
-
-            layers.forEach(layer => {
-                if (!scene.textures.exists(layer)) {
-                    console.error(`Couldn't load`, layer);
-                }
-            });
-        });
-        scene.load.start();
-
-        const allLoaded = layers.every(layer => scene.textures.exists(layer));
-        const playerSprites = allLoaded ? createSprites(layers) : createSprites(['skeleton']);
+    constructor({ scene, x, y, accountId, controlledByUser, layers = randomLayers() }) {
+        const playerSprites = createSprites(scene, ['skeleton']);
 
         const nameText = scene.add.text(0, 0, accountId, {
             fontSize: 16,
@@ -124,47 +137,59 @@ export class Player extends Phaser.GameObjects.Container {
         nameText.setOrigin(0.5, 2.5);
 
         super(scene, x, y, [...playerSprites, nameText]);
-
         this.controlledByUser = controlledByUser;
+        this.playerSprites = playerSprites;
 
         scene.physics.world.enableBody(this);
         this.body
             .setSize(20, 20)
             .setOffset(-10, 10);
 
-        this.playerSprites = playerSprites;
-
         scene.physics.add.collider(this, scene.mainLayer);
         scene.physics.add.collider(this, scene.autotileLayer);
-    
-        function createAnim(key, imageKey, i, row) {
-            const { anims } = scene;
-            const start = row * FRAMES_PER_ROW;
-            const end = row * FRAMES_PER_ROW + FRAMES_PER_ROW_ANIM;
-            const animKey = `${key}-${i}`;
-            anims.remove(animKey);
-            anims.create({
-                key: animKey,
-                frames: anims.generateFrameNumbers(imageKey, { frames: range(start, end) }),
-                frameRate: 10,
-                repeat: -1
-            });
+
+        this.preloadLayers(layers);
+    }
+
+    get layers() {
+        return this.playerSprites.map(sprite => sprite.texture.key);
+    }
+
+    preloadLayers(layers) {
+        const scene = this.scene;
+        for (let layer of layers) {
+            scene.load.spritesheet({ key: layer, url: layer, frameConfig: { frameWidth: 64, frameHeight: 64 } });
         }
 
-        function createSprites(layers) {
-            const playerSprites = layers.map(layer => scene.add.sprite(0, 0, layer))
-            playerSprites.forEach((sprite, i) => {
-                const imageKey = sprite.texture.key;
-                createAnim('player-up-walk', imageKey, i, 8);
-                createAnim('player-left-walk', imageKey, i, 9);
-                createAnim('player-down-walk', imageKey, i, 10);
-                createAnim('player-right-walk', imageKey, i, 11);
-            });
-            return playerSprites;
+        scene.load.once(Phaser.Loader.Events.COMPLETE, () => this.updateLayers(layers));
+        scene.load.start();
+    }
+
+    updateLayers(layers, recurse = true) {
+        if (!allLoaded(this.scene, layers)) {
+            if (recurse) {
+                this.preloadLayers(layers);
+            } else {
+                layers.forEach(layer => {
+                    if (!scene.textures.exists(layer)) {
+                        console.error(`Couldn't load`, layer);
+                    }
+                });
+            }
+            return;
+        }
+
+        if (!arrayEquals(this.layers, layers)) {
+            console.info('updating layers', this.layers, layers);
+            for (let sprite of this.playerSprites) {
+                this.remove(sprite);
+            }
+            this.playerSprites = createSprites(this.scene, layers);
+            this.add(this.playerSprites);
         }
     }
 
-    updateFromRemote({ x, y, frame, animName, animProgress }) {
+    updateFromRemote({ x, y, layers, frame, animName, animProgress }) {
         this.targetPosition = { x, y };
         if (animName) {
             this.play(animName, true);
@@ -172,6 +197,10 @@ export class Player extends Phaser.GameObjects.Container {
         } else {
             this.stopAnims();
             this.setSpriteFrame(frame);
+        }
+
+        if (layers) {
+            this.updateLayers(layers);
         }
     }
 
@@ -195,7 +224,7 @@ export class Player extends Phaser.GameObjects.Container {
 
     play(animName, ignoreIfPlaying) {
         this.playerSprites.forEach((sprite, i) => {
-            sprite.play(`${animName}-${i}`, ignoreIfPlaying);
+            sprite.play(`${animName}-${sprite.texture.key}-${i}`, ignoreIfPlaying);
         });
     }
 

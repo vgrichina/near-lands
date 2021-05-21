@@ -151,8 +151,8 @@ class MyGame extends Phaser.Scene
     {
         super();
 
-        Phaser.GameObjects.GameObjectFactory.register('player', function ({ accountId, x, y, controlledByUser = false }) {
-            const player = new Player({ scene: this.scene, x, y, accountId, controlledByUser })
+        Phaser.GameObjects.GameObjectFactory.register('player', function ({ accountId, x, y, layers, controlledByUser = false}) {
+            const player = new Player({ scene: this.scene, x, y, accountId, layers, controlledByUser })
             this.displayList.add(player);
             this.updateList.add(player);
             return player;
@@ -488,17 +488,17 @@ function updatePutTileQueue() {
     }
 }
 
-async function onLocationUpdate({ accountId, x, y, frame, animName, animProgress }) {
+async function onLocationUpdate({ accountId, x, y, frame, animName, animProgress, layers }) {
     if (accountId && accountId == account.accountId) {
         return;
     }
 
     if (!accountIdToPlayer[accountId]) {
         const scene = game.scene.scenes[0];
-        accountIdToPlayer[accountId] = scene.add.player({ scene, x, y, accountId });
+        accountIdToPlayer[accountId] = scene.add.player({ scene, x, y, accountId, layers });
     }
     const player = accountIdToPlayer[accountId];
-    player.updateFromRemote({ x, y, frame, animName, animProgress });
+    player.updateFromRemote({ x, y, layers, frame, animName, animProgress });
 }
 
 let p2p
@@ -522,15 +522,17 @@ async function publishLocation() {
             return;
         }
 
-        const { x, y } = scene.player;
-
-        const { playerSprites: [{ anims, ...playerSprite }] } = scene.player;
+        const { x, y, playerSprites } = scene.player;
+        const [{ anims, ...playerSprite }] = playerSprites;
+        const layers = playerSprites.map(sprite => sprite.texture.key);
         p2p.publishLocation({
             x,
             y,
             frame: playerSprite.frame.name,
             animName: anims.isPlaying && anims.getName(),
-            animProgress: anims.getProgress()
+            animProgress: anims.getProgress(),
+            // TODO: Throttle layers transmission to save bandwidth?
+            layers
         });
     } finally {
         setTimeout(publishLocation, UPDATE_DELTA);
