@@ -8,12 +8,82 @@ export const FRAMES_PER_ROW_ANIM = 9;
 
 const range = (start, end) => Array.from({ length: (end - start) }, (v, k) => k + start);
 
+function randomLayers() {
+    // TODO: Expand the list to cover all LPC variety
+    const BODY_TYPE = [ 'male', 'female' ];
+    const SKIN_COLOR = [ 'dark', 'dark2', 'darkelf', 'darkelf2', 'light', 'orc', 'red_orc', 'tanned', 'tanned2' ];
+    const HAIRCUT = [
+        'bangs', 'bangslong', 'bangslong2',
+        'bangsshort', 'bedhead', 'bunches',
+        'jewfro', 'long', 'longhawk',
+        'longknot', 'loose', 'messy1',
+        'messy2', 'mohawk', 'page',
+        'page2', 'parted', 'pixie',
+        'plain', 'ponytail', 'ponytail2',
+        'princess', 'shorthawk', 'shortknot',
+        'shoulderl', 'shoulderr', 'swoop',
+        'unkempt', 'xlong', 'xlongknot'
+    ];
+    const HAIR_COLOR = [
+        'black', 'blonde', 'blonde2',
+        'blue', 'blue2', 'brown',
+        'brown2', 'brunette', 'brunette2',
+        'dark-blonde', 'gold', 'gray',
+        'gray2', 'green', 'green2',
+        'light-blonde', 'light-blonde2', 'pink',
+        'pink2', 'purple', 'raven',
+        'raven2', 'redhead', 'redhead2',
+        'ruby-red', 'white-blonde', 'white-blonde2',
+        'white-cyan', 'white'
+    ];
+    const TORSO = {
+        female: [
+            'dress_female/dress_w_sash_female',
+            'dress_female/underdress',
+        ],
+        male: [
+            'shirts/longsleeve/male/brown_longsleeve',
+            'shirts/longsleeve/male/maroon_longsleeve',
+            'shirts/longsleeve/male/teal_longsleeve',
+            'shirts/longsleeve/male/white_longsleeve',
+        ]
+    };
+    const PANTS = {
+        male: [
+            'magenta_pants_male',
+            'red_pants_male',
+            'teal_pants_male',
+            'white_pants_male'
+        ]
+    }
+
+    const selectRandom = (items) => items[Math.floor(Math.random() * items.length)];
+
+    const bodyType = selectRandom(BODY_TYPE);
+    const skinColor = selectRandom(SKIN_COLOR);
+    const haircut = selectRandom(HAIRCUT);
+    const hairColor = selectRandom(HAIR_COLOR);
+    const torso = selectRandom(TORSO[bodyType]);
+
+    const needsPants = !torso.includes('dress');
+    const pants = needsPants && selectRandom(PANTS[bodyType]);
+
+    const layers = [
+        `body/${bodyType}/${skinColor}`,
+        `hair/${bodyType}/${haircut}/${hairColor}`,
+        `torso/${torso}`,
+    ]
+    if (needsPants) {
+        layers.push(`legs/pants/${bodyType}/${pants}`);
+    }
+
+    return layers.map(layer => `/lpc-character/${layer}.png`);
+}
+
 export class Player extends Phaser.GameObjects.Container {
     constructor({ scene, x, y, accountId, controlledByUser }) {
-        const layers = [
-            "/lpc-character/body/female/light.png",
-            "/lpc-character/torso/dress_female/dress_w_sash_female.png",
-            "/lpc-character/hair/female/longhawk/brunette.png"];
+        const layers = randomLayers();
+        console.log('layers', layers);
         
         for (let layer of layers) {
             scene.load.spritesheet({ key: layer, url: layer, frameConfig: { frameWidth: 64, frameHeight: 64 }});
@@ -24,6 +94,12 @@ export class Player extends Phaser.GameObjects.Container {
                 this.playerSprites = createSprites(layers);
                 this.add(this.playerSprites);
             }
+
+            layers.forEach(layer => {
+                if (!scene.textures.exists(layer)) {
+                    console.error(`Couldn't load`, layer);
+                }
+            });
         });
         scene.load.start();
 
