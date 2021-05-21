@@ -84,7 +84,7 @@ function createAnim(scene, key, imageKey, i, row) {
     const { anims } = scene;
     const start = row * FRAMES_PER_ROW;
     const end = row * FRAMES_PER_ROW + FRAMES_PER_ROW_ANIM;
-    const animKey = `${key}-${imageKey}-${i}`;
+    const animKey = `${key}:${imageKey}:${i}`;
     anims.remove(animKey);
     anims.create({
         key: animKey,
@@ -191,16 +191,17 @@ export class Player extends Phaser.GameObjects.Container {
 
     updateFromRemote({ x, y, layers, frame, animName, animProgress }) {
         this.targetPosition = { x, y };
+
+        if (layers) {
+            this.updateLayers(layers);
+        }
+
         if (animName) {
             this.play(animName, true);
             this.setAnimProgress(animProgress);
         } else {
             this.stopAnims();
             this.setSpriteFrame(frame);
-        }
-
-        if (layers) {
-            this.updateLayers(layers);
         }
     }
 
@@ -218,13 +219,20 @@ export class Player extends Phaser.GameObjects.Container {
 
     setAnimProgress(animProgress) {
         for (let sprite of this.playerSprites) {
-            sprite.anims.setProgress(animProgress);
+            if (sprite.anims.currentAnim) {
+                sprite.anims.setProgress(animProgress);
+            }
         }
     }
 
     play(animName, ignoreIfPlaying) {
         this.playerSprites.forEach((sprite, i) => {
-            sprite.play(`${animName}-${sprite.texture.key}-${i}`, ignoreIfPlaying);
+            const spriteAnimName = `${animName}:${sprite.texture.key}:${i}`;
+            if (!this.scene.anims.exists(spriteAnimName)) {
+                console.warn('No such animation', spriteAnimName);
+                return;
+            }
+            sprite.play(spriteAnimName, ignoreIfPlaying);
         });
     }
 

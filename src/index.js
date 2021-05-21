@@ -534,7 +534,7 @@ async function publishLocation() {
             x,
             y,
             frame: playerSprite.frame.name,
-            animName: anims.isPlaying && anims.getName(),
+            animName: anims.isPlaying && anims.getName().replace(/:.+$/, ''),
             animProgress: anims.getProgress(),
             // TODO: Throttle layers transmission to save bandwidth?
             layers
