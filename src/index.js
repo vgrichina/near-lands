@@ -144,6 +144,7 @@ async function setNextPixel() {
 }
 setNextPixel();
 
+const UI_DEPTH = 10;
 
 class MyGame extends Phaser.Scene
 {
@@ -202,11 +203,13 @@ class MyGame extends Phaser.Scene
         const inventoryY = tiles.tileHeight;
         this.inventoryLayer = this.inventoryMap.createLayer(0, tiles, inventoryX, inventoryY);
         this.inventoryLayer.setScrollFactor(0);
+        this.inventoryLayer.setDepth(UI_DEPTH);
 
         this.inventoryBorder = this.add.graphics();
         this.inventoryBorder.lineStyle(2, 0x000000, 1);
         this.inventoryBorder.strokeRect(inventoryX, inventoryY, this.inventoryMap.widthInPixels, this.inventoryMap.heightInPixels);
         this.inventoryBorder.setScrollFactor(0);
+        this.inventoryBorder.setDepth(UI_DEPTH);
 
         this.marker = this.add.graphics();
         this.marker.lineStyle(2, 0x000000, 1);
@@ -265,6 +268,7 @@ class MyGame extends Phaser.Scene
                 lineHeight: 28
             });
             help.setScrollFactor(0);
+            help.setDepth(Number.MAX_VALUE);
             help.setAlpha(0.75);
         }
 
@@ -304,6 +308,7 @@ class MyGame extends Phaser.Scene
 
         this.marker.x = sourceMap.tileToWorldX(pointerTileX);
         this.marker.y = sourceMap.tileToWorldY(pointerTileY);
+        this.marker.setDepth(insideInventory ? UI_DEPTH + 1 : 0);
 
         const insideVirtualGamepad =
             this.joystick && (
