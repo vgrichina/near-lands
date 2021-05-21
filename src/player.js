@@ -6,13 +6,30 @@ export const UPDATE_DELTA = 50;
 export const FRAMES_PER_ROW = 13;
 export const FRAMES_PER_ROW_ANIM = 9;
 
+const range = (start, end) => Array.from({ length: (end - start) }, (v, k) => k + start);
+
 export class Player extends Phaser.GameObjects.Container {
     constructor({ scene, x, y, accountId, controlledByUser }) {
-        const playerSprites = [
-            scene.add.sprite(0, 0, 'body-female-light'),
-            scene.add.sprite(0, 0, 'torso-female-dress'),
-            scene.add.sprite(0, 0, 'hair-female-longhawk-brunette'),
-        ];
+        const layers = [
+            "/lpc-character/body/female/light.png",
+            "/lpc-character/torso/dress_female/dress_w_sash_female.png",
+            "/lpc-character/hair/female/longhawk/brunette.png"];
+        
+        for (let layer of layers) {
+            scene.load.spritesheet({ key: layer, url: layer, frameConfig: { frameWidth: 64, frameHeight: 64 }});
+        }
+        scene.load.once(Phaser.Loader.Events.COMPLETE, () => {
+            if (this.playerSprites[0].texture.key == 'skeleton') {
+                this.remove(this.playerSprites[0]);
+                this.playerSprites = createSprites(layers);
+                this.add(this.playerSprites);
+            }
+        });
+        scene.load.start();
+
+        const allLoaded = layers.every(layer => scene.textures.exists(layer));
+        const playerSprites = allLoaded ? createSprites(layers) : createSprites(['skeleton']);
+
         const nameText = scene.add.text(0, 0, accountId, {
             fontSize: 16,
             fontFamily: 'sans-serif',
@@ -43,29 +60,32 @@ export class Player extends Phaser.GameObjects.Container {
 
         scene.physics.add.collider(this, scene.mainLayer);
         scene.physics.add.collider(this, scene.autotileLayer);
-
-        const { anims } = scene;
-
-        const range = (start, end) => Array.from({length: (end - start)}, (v, k) => k + start);
     
         function createAnim(key, imageKey, i, row) {
+            const { anims } = scene;
             const start = row * FRAMES_PER_ROW;
             const end = row * FRAMES_PER_ROW + FRAMES_PER_ROW_ANIM;
+            const animKey = `${key}-${i}`;
+            anims.remove(animKey);
             anims.create({
-                key: `${key}-${i}`,
+                key: animKey,
                 frames: anims.generateFrameNumbers(imageKey, { frames: range(start, end) }),
                 frameRate: 10,
                 repeat: -1
             });
         }
 
-        playerSprites.forEach((sprite, i) => {
-            const imageKey = sprite.texture.key;
-            createAnim('player-up-walk', imageKey, i, 8);
-            createAnim('player-left-walk', imageKey, i, 9);
-            createAnim('player-down-walk', imageKey, i, 10);
-            createAnim('player-right-walk', imageKey, i, 11);
-        });
+        function createSprites(layers) {
+            const playerSprites = layers.map(layer => scene.add.sprite(0, 0, layer))
+            playerSprites.forEach((sprite, i) => {
+                const imageKey = sprite.texture.key;
+                createAnim('player-up-walk', imageKey, i, 8);
+                createAnim('player-left-walk', imageKey, i, 9);
+                createAnim('player-down-walk', imageKey, i, 10);
+                createAnim('player-right-walk', imageKey, i, 11);
+            });
+            return playerSprites;
+        }
     }
 
     updateFromRemote({ x, y, frame, animName, animProgress }) {
