@@ -10,8 +10,8 @@ const range = (start, end) => Array.from({ length: (end - start) }, (v, k) => k 
 
 function randomLayers() {
     // TODO: Expand the list to cover all LPC variety
-    const BODY_TYPE = [ 'male', 'female' ];
-    const SKIN_COLOR = [ 'dark', 'dark2', 'darkelf', 'darkelf2', 'light', 'orc', 'red_orc', 'tanned', 'tanned2' ];
+    const BODY_TYPE = ['male', 'female'];
+    const SKIN_COLOR = ['dark', 'dark2', 'darkelf', 'darkelf2', 'light', 'orc', 'red_orc', 'tanned', 'tanned2'];
     const HAIRCUT = [
         'bangs', 'bangslong', 'bangslong2',
         'bangsshort', 'bedhead', 'bunches',
@@ -246,7 +246,7 @@ export class Player extends Phaser.GameObjects.Container {
 
         if (!this.controlledByUser) {
             return;
-        }        
+        }
 
         // Stop any previous movement from the last frame
         const prevVelocity = this.body.velocity.clone();
@@ -259,14 +259,14 @@ export class Player extends Phaser.GameObjects.Container {
             this.body.setVelocityY(this.scene.gamepad.joystick.properties.y / 100 * speed);
         }
 
-        if (this.scene.cursors.left.isDown) {
+        if (this.scene.cursors.left.isDown && this.body.position.x > 10) {
             this.body.setVelocityX(-100);
-        } else if (this.scene.cursors.right.isDown) {
+        } else if (this.scene.cursors.right.isDown && this.body.position.x < 5 * 32 * 16 - 25) {
             this.body.setVelocityX(100);
         }
-        if (this.scene.cursors.up.isDown) {
+        if (this.scene.cursors.up.isDown && this.body.position.y > 10) {
             this.body.setVelocityY(-100);
-        } else if (this.scene.cursors.down.isDown) {
+        } else if (this.scene.cursors.down.isDown && this.body.position.y < 5 * 32 * 16 - 27) {
             this.body.setVelocityY(100);
         }
 

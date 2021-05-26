@@ -1,52 +1,33 @@
 import { context, ContractPromiseBatch, storage, u128 } from "near-sdk-as";
+import { Chunk, CHUNK_SIZE } from "./model";
 
-const CONTRACT_ID = "";
-const MAP_MAX_Y_CHUNKS = 8;
-const MAP_MAX_X_CHUNKS = 8;
-
-@nearBindgen
-export class ChunkMetaData {
-
-    constructor(
-        public x: u32,
-        public y: u32,
-        public owner: string,
-        public price: u128) {
-    }
-}
-
-export function sellChunk(x: u32, y: u32, price: u128): void {
-    const chunk = getChunkMetaData(x, y);
+export function sellChunk_impl(x: u32, y: u32, price: u128): void {
+    const chunk_location = getChunkLocationByGlobalCoords(x, y);
+    const chunk = Chunk.get(chunk_location.x, chunk_location.y);
     chunk.price = price;
-    saveChunkMetaData(x, y, chunk);
+    storage.set(Chunk.key(chunk_location.x, chunk_location.y), chunk);
 }
 
-
-export function initChunkMetaData(x: u32, y: u32): ChunkMetaData {
-    return new ChunkMetaData(x, y, CONTRACT_ID, u128.Zero);
-}
-
-export function getChunkMetaData(x: u32, y: u32): ChunkMetaData {
-    assertChunkSize(x, y);
-    return storage.get<ChunkMetaData>(x + "_" + y, initChunkMetaData(x, y))!;
-}
-
-export function saveChunkMetaData(x: u32, y: u32, data: ChunkMetaData): void {
-    isChunkOwner(x, y);
-    assertChunkSize(x, y);
-    storage.set(x.toString() + "_" + y.toString(), data);
-}
-
-function assertChunkSize(x: u32, y: u32) {
-    assert(x <= MAP_MAX_X_CHUNKS, "Chunk out of border");
-    assert(y <= MAP_MAX_Y_CHUNKS, "Chunk out of border");
+export function buyChunk_impl(x: u32, y: u32): void {
+    const chunk_location = getChunkLocationByGlobalCoords(x, y);
+    const chunk = Chunk.get(chunk_location.x, chunk_location.y);
+    assert(chunk.price > u128.Zero, "Chunk not for sell");
+    assert(context.attachedDeposit == chunk.price, "Attached amount of NEAR is not correct.");
+    const old_owner = chunk.owner;
+    chunk.owner = context.predecessor;
+    storage.set(Chunk.key(chunk_location.x, chunk_location.y), chunk);
+    sendNear(old_owner, chunk.price);
 }
 
 function isChunkOwner(x: u32, y: u32) {
-    assert(getChunkMetaData(x, y).owner == context.predecessor, "You are not the owner of this chunk");
+    const chunk_location = getChunkLocationByGlobalCoords(x, y);
+    assert(Chunk.get(chunk_location.x, chunk_location.y).owner == context.predecessor, "You are not the owner of this chunk");
 }
 
+function getChunkLocationByGlobalCoords(x: u32, y: u32): { x: i32, y: i32 } {
+    return { x: x / CHUNK_SIZE, y: y / CHUNK_SIZE };
+}
 
-export function sendNear(recipient: string, amount: u128): void {
+function sendNear(recipient: string, amount: u128): void {
     ContractPromiseBatch.create(recipient).transfer(amount);
 }
