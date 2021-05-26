@@ -19,7 +19,7 @@ A Phaser 3 project template with ES6 support via [Babel 7](https://babeljs.io/) 
 
 After cloning the repo, run `npm install` from your project directory. Then, you can start the local development server by running `npm start`.
 
-After starting the development server with `npm start`, you can edit any files in the `src` folder and webpack will automatically recompile and reload your server (available at `http://localhost:1234` by default).
+After starting the development server with `npm start`, you can edit any files in the `src` folder and Parcel will automatically recompile and reload your server (available at `http://localhost:1234` by default).
 
 ## Customizing the Template
 
@@ -35,9 +35,9 @@ You can write modern ES6+ JavaScript and Babel will transpile it to a version of
 ]
  ```
 
-### Webpack
+### Parcel
 
-If you want to customize your build, such as adding a new webpack loader or plugin (i.e. for loading CSS or fonts), you can modify the `webpack/base.js` file for cross-project changes, or you can modify and/or create new configuration files and target them in specific npm tasks inside of `package.json'.
+Check out https://v2.parceljs.org/ for documentation on how to customize configuration and common recipes.
 
 ## Deploying Code
 
