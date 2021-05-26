@@ -1,7 +1,8 @@
-# Phaser 3 Parcel Project Template
+# Phaser 3 Decentralized Multiplayer Game Project Template
 
 A Phaser 3 project template with ES6 support via [Babel 7](https://babeljs.io/) and [Parcel](https://v2.parceljs.org) that includes hot-reloading for development and production-ready builds.
 
+This project demonstrates how you can use [NEAR blockchain](https://near.org) for user accounts, storage and turn-based game logic. It also demonstrates usage of [simple-peer](https://github.com/feross/simple-peer) to enable real time peer to peer communication between users (used to share location of every user).
 
 ## Requirements
 
@@ -20,6 +21,17 @@ A Phaser 3 project template with ES6 support via [Babel 7](https://babeljs.io/) 
 After cloning the repo, run `npm install` from your project directory. Then, you can start the local development server by running `npm start`.
 
 After starting the development server with `npm start`, you can edit any files in the `src` folder and Parcel will automatically recompile and reload your server (available at `http://localhost:1234` by default).
+
+### Important files / directories
+
+- `static/` – static assets that gonna be copied as is to `dist/` folder. Includes `lpc-character` folder which contains character spritesheets provided by https://github.com/jrconway3/Universal-LPC-spritesheet project. You can use http://gaurav.munjal.us/Universal-LPC-Spritesheet-Character-Generator/ to explore available sprites.
+- `src/assets` – static assets that can be included from `.js` files and processed by Parcel (including tile images)
+- `src/index.js` – main JS entry point and game logic
+- `src/near.js` – boilerplate related to NEAR blockchain
+- `src/p2p.js` – common code to establish peer to peer connectivity
+– `src/player.js` – logic related to player characters (including remote)
+- `src/phaser-plugin-virtual-gamepad.js` – virtual gamepad plugin for use with touch screen devices
+- `index.html` – entry point for webapp build
 
 ## Customizing the Template
 
