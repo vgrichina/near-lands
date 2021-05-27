@@ -443,8 +443,8 @@ class MyGame extends Phaser.Scene
 
 const config = {
     type: Phaser.CANVAS,
-    width: 1400,
-    height: 760,
+    width: window.innerWidth - 20,
+    height: window.innerHeight - 70,
     backgroundColor: '#2d2d2d',
     parent: 'phaser-example',
     pixelArt: true,
