@@ -1,31 +1,26 @@
 import { context, ContractPromiseBatch, storage, u128 } from "near-sdk-as";
 import { Chunk, CHUNK_SIZE } from "./model";
 
-export function sellChunk_impl(x: u32, y: u32, price: u128): void {
-    const chunk_location = getChunkLocationByGlobalCoords(x, y);
-    const chunk = Chunk.get(chunk_location.x, chunk_location.y);
+export function sellChunk_impl(chunk_x: u32, chunk_y: u32, price: u128): void {
+
+    const chunk = Chunk.get(chunk_x, chunk_y);
     chunk.price = price;
-    storage.set(Chunk.key(chunk_location.x, chunk_location.y), chunk);
+    storage.set(Chunk.key(chunk_x, chunk_y), chunk);
 }
 
-export function buyChunk_impl(x: u32, y: u32): void {
-    const chunk_location = getChunkLocationByGlobalCoords(x, y);
-    const chunk = Chunk.get(chunk_location.x, chunk_location.y);
+export function buyChunk_impl(chunk_x: u32, chunk_y: u32): void {
+
+    const chunk = Chunk.get(chunk_x, chunk_y);
     assert(chunk.price > u128.Zero, "Chunk not for sell");
     assert(context.attachedDeposit == chunk.price, "Attached amount of NEAR is not correct.");
     const old_owner = chunk.owner;
     chunk.owner = context.predecessor;
-    storage.set(Chunk.key(chunk_location.x, chunk_location.y), chunk);
+    storage.set(Chunk.key(chunk_x, chunk_y), chunk);
     sendNear(old_owner, chunk.price);
 }
 
-function isChunkOwner(x: u32, y: u32) {
-    const chunk_location = getChunkLocationByGlobalCoords(x, y);
-    assert(Chunk.get(chunk_location.x, chunk_location.y).owner == context.predecessor, "You are not the owner of this chunk");
-}
-
-function getChunkLocationByGlobalCoords(x: u32, y: u32): { x: i32, y: i32 } {
-    return { x: x / CHUNK_SIZE, y: y / CHUNK_SIZE };
+function isChunkOwner(chunk_x: u32, chunk_y: u32) {
+    assert(Chunk.get(chunk_x, chunk_y).owner == context.predecessor, "You are not the owner of this chunk");
 }
 
 function sendNear(recipient: string, amount: u128): void {
