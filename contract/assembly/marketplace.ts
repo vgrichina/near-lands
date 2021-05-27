@@ -27,7 +27,7 @@ export function initChunkMetaData(chunk_x: u32, chunk_y: u32): ChunkMetaData {
     return new ChunkMetaData(chunk_x, chunk_y, CONTRACT_ID, u128.Zero);
 }
 
-export function sellChunk_impl(chunk_x: u32, chunk_y: u32, price: u128): void {
+export function offerChunk_impl(chunk_x: u32, chunk_y: u32, price: u128): void {
     const chunk = getChunkMetaData(chunk_x, chunk_y);
     chunk.price = price;
     saveChunkMetaData(chunk_x, chunk_y, chunk);

@@ -1,5 +1,5 @@
 import { storage, u128 } from "near-sdk-as";
-import { buyChunk_impl, ChunkMetaData, getAllChunkMetadata_impl, sellChunk_impl } from "./marketplace";
+import { buyChunk_impl, ChunkMetaData, getAllChunkMetadata_impl, offerChunk_impl } from "./marketplace";
 
 import { Chunk, ChunkMap, TileInfo } from "./model"
 
@@ -10,8 +10,8 @@ export function getAllChunkMetadata(): ChunkMetaData[] {
   return getAllChunkMetadata_impl();
 }
 
-export function sellChunk(chunk_x: u32, chunk_y: u32, price: string): void {
-  sellChunk_impl(chunk_x, chunk_y, u128.from(price));
+export function offerChunk(chunk_x: u32, chunk_y: u32, price: string): void {
+  offerChunk_impl(chunk_x, chunk_y, u128.from(price));
 }
 
 export function buyChunk(chunk_x: u32, chunk_y: u32): void {
