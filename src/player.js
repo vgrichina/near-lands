@@ -10,8 +10,8 @@ const range = (start, end) => Array.from({ length: (end - start) }, (v, k) => k 
 
 function randomLayers() {
     // TODO: Expand the list to cover all LPC variety
-    const BODY_TYPE = ['male', 'female'];
-    const SKIN_COLOR = ['dark', 'dark2', 'darkelf', 'darkelf2', 'light', 'orc', 'red_orc', 'tanned', 'tanned2'];
+    const BODY_TYPE = [ 'male', 'female' ];
+    const SKIN_COLOR = [ 'dark', 'dark2', 'darkelf', 'darkelf2', 'light', 'orc', 'red_orc', 'tanned', 'tanned2' ];
     const HAIRCUT = [
         'bangs', 'bangslong', 'bangslong2',
         'bangsshort', 'bedhead', 'bunches',
@@ -246,7 +246,7 @@ export class Player extends Phaser.GameObjects.Container {
 
         if (!this.controlledByUser) {
             return;
-        }
+        }        
 
         // Stop any previous movement from the last frame
         const prevVelocity = this.body.velocity.clone();
