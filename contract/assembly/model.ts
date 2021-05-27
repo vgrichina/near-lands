@@ -1,6 +1,6 @@
 import { storage, u128 } from "near-sdk-as";
 
-export const CHUNK_SIZE = 16;
+const CHUNK_SIZE = 16;
 export const CHUNK_COUNT = 5;
 const START_TILE_ID = "-1";
 
@@ -8,8 +8,6 @@ const START_TILE_ID = "-1";
 export class Chunk {
   nonce: i32;
   tiles: string[][];
-  owner: string;
-  price: u128;
 
   constructor() {
     this.tiles = new Array<Array<string>>(CHUNK_SIZE);
@@ -19,8 +17,6 @@ export class Chunk {
         this.tiles[i][j] = START_TILE_ID;
       }
     }
-    this.price = u128.Zero;
-    this.owner = "lands.near";
   }
 
   static key(x: i32, y: i32): string {

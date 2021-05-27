@@ -1,8 +1,22 @@
-import { storage } from "near-sdk-as";
+import { storage, u128 } from "near-sdk-as";
+import { buyChunk_impl, ChunkMetaData, getAllChunkMetadata_impl, sellChunk_impl } from "./marketplace";
 
 import { Chunk, ChunkMap, TileInfo } from "./model"
 
 // --- contract code goes below
+
+
+export function getAllChunkMetadata(): ChunkMetaData[] {
+  return getAllChunkMetadata_impl();
+}
+
+export function sellChunk(chunk_x: u32, chunk_y: u32, price: string): void {
+  sellChunk_impl(chunk_x, chunk_y, u128.from(price));
+}
+
+export function buyChunk(chunk_x: u32, chunk_y: u32): void {
+  buyChunk_impl(chunk_x, chunk_y);
+}
 
 export function setTiles(tiles: TileInfo[]): void {
   let map = ChunkMap.get();
