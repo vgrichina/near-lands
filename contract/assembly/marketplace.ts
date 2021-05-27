@@ -4,14 +4,6 @@ import { Chunk, CHUNK_COUNT } from "./model";
 const CONTRACT_ID = "near.lands";
 
 @nearBindgen
-export class Location {
-    constructor(
-        public x: u32,
-        public y: u32) {
-    }
-}
-
-@nearBindgen
 export class ChunkMetaData {
     constructor(
         public x: u32,
