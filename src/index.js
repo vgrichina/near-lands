@@ -235,16 +235,10 @@ class MyGame extends Phaser.Scene
         this.autotileLayer = this.mainMap.createBlankLayer('Main-autotile', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
         this.mainMap.setLayer(this.mainLayer);
 
-        this.createInventory(this.desertTiles);
-
-        this.selectedTile = this.inventoryMap.getTileAt(5, 3);
-
         this.cameras.main.setBounds(0, 0, this.mainMap.widthInPixels, this.mainMap.heightInPixels);
 
         this.cursors = this.input.keyboard.createCursorKeys();
-
         this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
-
         this.inventoryKeys = [
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
@@ -256,28 +250,9 @@ class MyGame extends Phaser.Scene
         const roundPixels = true;
         this.cameras.main.startFollow(this.player, roundPixels);
 
-        const isTouchDevice = navigator.maxTouchPoints > 0;
+        this.createOrUpdateUI();
 
-        if (!isTouchDevice) {
-            var help = this.add.text(16, 16, 'Left-click to paint.\nShift + Left-click to select tile.\nArrows to scroll. Digits to switch tiles.', {
-                fontSize: '18px',
-                padding: { x: 10, y: 5 },
-                backgroundColor: '#000000',
-                fill: '#ffffff',
-                // NOTE: Looks like Brave needs explicit line height
-                lineHeight: 28
-            });
-            help.setScrollFactor(0);
-            help.setDepth(Number.MAX_VALUE);
-            help.setAlpha(0.75);
-        }
-
-        if (isTouchDevice) {
-            this.game.plugins.installScenePlugin('gamepad', VirtualGamepad, 'gamepad', this);
-            const { width, height } = this.cameras.main;
-            this.joystick = this.gamepad.addJoystick(80, height - 80, 1.2, 'gamepad');
-            this.button = this.gamepad.addButton(width - 80, height - 80, 1.0, 'gamepad');
-        }
+        this.selectedTile = this.inventoryMap.getTileAt(5, 3);
 
         loadBoardAndDraw().catch(console.error);
 
@@ -291,6 +266,45 @@ class MyGame extends Phaser.Scene
                 .setAlpha(0.75)
                 .setDepth(20);
         };
+
+        this.scale.on('resize', () => {
+            this.createOrUpdateUI();
+        });
+    }
+
+    createOrUpdateUI() {
+        this.createInventory(this.desertTiles);
+
+        const isTouchDevice = navigator.maxTouchPoints > 0;
+
+        if (!isTouchDevice) {
+            if (this.help) {
+                this.help.destroy();
+            }
+
+            this.help = this.add.text(16, 16, 'Left-click to paint.\nShift + Left-click to select tile.\nArrows to scroll. Digits to switch tiles.', {
+                fontSize: '18px',
+                padding: { x: 10, y: 5 },
+                backgroundColor: '#000000',
+                fill: '#ffffff',
+                // NOTE: Looks like Brave needs explicit line height
+                lineHeight: 28
+            });
+            this.help.setScrollFactor(0);
+            this.help.setDepth(Number.MAX_VALUE);
+            this.help.setAlpha(0.75);
+        }
+
+        if (isTouchDevice) {
+            this.game.plugins.installScenePlugin('gamepad', VirtualGamepad, 'gamepad', this);
+            const { width, height } = this.cameras.main;
+            if (this.joystick) {
+                this.joystick.destroy();
+                this.button.destroy();
+            }
+            this.joystick = this.gamepad.addJoystick(80, height - 80, 1.2, 'gamepad');
+            this.button = this.gamepad.addButton(width - 80, height - 80, 1.0, 'gamepad');
+        }
     }
 
     update(time, delta) {
@@ -443,8 +457,12 @@ class MyGame extends Phaser.Scene
 
 const config = {
     type: Phaser.CANVAS,
-    width: window.innerWidth - 20,
-    height: window.innerHeight - 70,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    },
     backgroundColor: '#2d2d2d',
     parent: 'phaser-example',
     pixelArt: true,
