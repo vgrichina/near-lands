@@ -298,12 +298,14 @@ class MyGame extends Phaser.Scene
         if (isTouchDevice) {
             this.game.plugins.installScenePlugin('gamepad', VirtualGamepad, 'gamepad', this);
             const { width, height } = this.cameras.main;
-            if (this.joystick) {
-                this.joystick.destroy();
-                this.button.destroy();
+            if (!this.joystick) {
+                this.joystick = this.gamepad.addJoystick(0, 0, 1.2, 'gamepad');
+                this.button = this.gamepad.addButton(0, 0, 1.0, 'gamepad');
             }
-            this.joystick = this.gamepad.addJoystick(80, height - 80, 1.2, 'gamepad');
-            this.button = this.gamepad.addButton(width - 80, height - 80, 1.0, 'gamepad');
+            this.joystick.x = 80;
+            this.joystick.y = height - 80;
+            this.button.x = width - 80;
+            this.button.y = height - 80;
         }
     }
 
