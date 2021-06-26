@@ -106,10 +106,28 @@ function updatePending() {
 
 function updateError(e) {
     console.log('updateError', e);
-    $forEach('.error', elem => {
-        elem.innerHTML = `Last error: ${e}`;
-        elem.style.display = 'inline';
+
+    const scene = game.scene.scenes[0];
+    if (!scene) {
+        return;
+    }
+
+    const { width } = scene.cameras.main;
+
+    if (scene.errorLabel) {
+        scene.errorLabel.destroy();
+    }
+    scene.errorLabel = scene.add.text(0, 0, `Last error: ${e}`, {
+        fontSize: '14px',
+        padding: { x: 10, y: 5 },
+        backgroundColor: '#000000',
+        fill: '#f00'
     });
+    scene.errorLabel.setScrollFactor(0);
+    scene.errorLabel.setDepth(Number.MAX_VALUE);
+    scene.errorLabel.setAlpha(0.75);
+    scene.errorLabel.x = Math.floor((width - scene.errorLabel.width) / 2);
+    scene.errorLabel.y = scene.messageLabel.y - 10 - scene.errorLabel.height;
 }
 
 async function setNextPixel() {
@@ -320,7 +338,6 @@ class MyGame extends Phaser.Scene
         if (this.messageLabel) {
             this.messageLabel.destroy();
         }
-
         this.messageLabel = this.add.text(0, 0, 'Pending ...', {
             fontSize: '14px',
             padding: { x: 10, y: 5 },
