@@ -93,15 +93,19 @@ function putTileOnChain(x, y, tileId) {
 }
 
 function updatePending() {
-    if (setTileQueue.length == 0 && setTileBatch.length == 0) {
-        $forEach('.pending-tiles', elem => elem.style = 'display: none;');
+    const scene = game.scene.scenes[0];
+
+    if (!scene || !scene.messageLabel) {
         return;
     }
 
-    $forEach('.pending-tiles', elem => {
-        elem.style = 'display: inline;';
-        elem.innerHTML = `Pending: ${setTileQueue.length + setTileBatch.length}`;
-    });
+    if (setTileQueue.length == 0 && setTileBatch.length == 0) {
+        scene.messageLabel.visible = false;
+        return;
+    }
+
+    scene.messageLabel.visible = true;
+    scene.messageLabel.text = `Pending: ${setTileQueue.length + setTileBatch.length}`;
 }
 
 function updateError(e) {
@@ -316,6 +320,22 @@ class MyGame extends Phaser.Scene
             this.loginButton.x = width - 10 - this.loginButton.width;
             this.loginButton.y = 10;
         }
+
+        if (this.messageLabel) {
+            this.messageLabel.destroy();
+        }
+
+        this.messageLabel = this.add.text(0, 0, 'Pending ...', {
+            fontSize: '14px',
+            padding: { x: 10, y: 5 },
+            backgroundColor: '#000000',
+        });
+        this.messageLabel.setScrollFactor(0);
+        this.messageLabel.setDepth(Number.MAX_VALUE);
+        this.messageLabel.setAlpha(0.75);
+        this.messageLabel.x = Math.floor((width - this.messageLabel.width) / 2);
+        this.messageLabel.y = height - 10 - this.messageLabel.height;
+        updatePending();
 
         const isTouchDevice = navigator.maxTouchPoints > 0;
 
