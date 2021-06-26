@@ -79,15 +79,11 @@ async function loadBoardAndDraw() {
 let setTileQueue = [];
 let setTileBatch = [];
 function putTileOnChain(x, y, tileId) {
-    if (setTileQueue.length > 0) {
-        const last = setTileQueue[setTileQueue.length - 1];
-        if (last.x == x && last.y == y && last.tileId == tileId) {
-            return;
-        }
+    if (setTileQueue.concat(setTileBatch).some(tile => x == tile.x && y == tile.y && tileId == tile.tileId)) {
+        return;
     }
 
     console.log('putTileOnChain', x, y, tileId);
-
     setTileQueue.push({ x, y, tileId });
     updatePending();
 }
