@@ -200,7 +200,7 @@ class MyGame extends Phaser.Scene
         });
 
         const inventoryX = this.cameras.main.width - this.inventoryMap.widthInPixels - tiles.tileWidth;
-        const inventoryY = tiles.tileHeight;
+        const inventoryY = tiles.tileHeight * 1.5;
         this.inventoryLayer = this.inventoryMap.createLayer(0, tiles, inventoryX, inventoryY);
         this.inventoryLayer.setScrollFactor(0);
         this.inventoryLayer.setDepth(UI_DEPTH);
@@ -273,7 +273,49 @@ class MyGame extends Phaser.Scene
     }
 
     createOrUpdateUI() {
+        const { width, height } = this.cameras.main;
+
         this.createInventory(this.desertTiles);
+
+        if (this.logoutButton) {
+            this.logoutButton.destroy();
+            this.logoutButton = null;
+        }
+        if (this.loginButton) {
+            this.loginButton.destroy();
+            this.loginButton = null;
+        }
+        if (walletConnection.isSignedIn()) {
+            this.logoutButton = this.add.text(0, 0, 'Logout', {
+                fontSize: '16px',
+                padding: { x: 10, y: 5 },
+                backgroundColor: '#000000',
+            });
+            this.logoutButton.setScrollFactor(0);
+            this.logoutButton.setDepth(Number.MAX_VALUE);
+            this.logoutButton.setAlpha(0.75);
+            this.logoutButton.setInteractive({ useHandCursor: true });
+            this.logoutButton.on('pointerup', () => {
+                logout();
+            });
+            this.logoutButton.x = width - 10 - this.logoutButton.width;
+            this.logoutButton.y = 10;
+        } else {
+            this.loginButton = this.add.text(0, 0, 'Login with NEAR', {
+                fontSize: '16px',
+                padding: { x: 10, y: 5 },
+                backgroundColor: '#000000',
+            });
+            this.loginButton.setScrollFactor(0);
+            this.loginButton.setDepth(Number.MAX_VALUE);
+            this.loginButton.setAlpha(0.75);
+            this.loginButton.setInteractive({ useHandCursor: true });
+            this.loginButton.on('pointerup', () => {
+                login();
+            });
+            this.loginButton.x = width - 10 - this.loginButton.width;
+            this.loginButton.y = 10;
+        }
 
         const isTouchDevice = navigator.maxTouchPoints > 0;
 
@@ -283,7 +325,7 @@ class MyGame extends Phaser.Scene
             }
 
             this.help = this.add.text(16, 16, 'Left-click to paint.\nShift + Left-click to select tile.\nArrows to scroll. Digits to switch tiles.', {
-                fontSize: '18px',
+                fontSize: '14px',
                 padding: { x: 10, y: 5 },
                 backgroundColor: '#000000',
                 fill: '#ffffff',
@@ -297,7 +339,6 @@ class MyGame extends Phaser.Scene
 
         if (isTouchDevice) {
             this.game.plugins.installScenePlugin('gamepad', VirtualGamepad, 'gamepad', this);
-            const { width, height } = this.cameras.main;
             if (!this.joystick) {
                 this.joystick = this.gamepad.addJoystick(0, 0, 1.2, 'gamepad');
                 this.button = this.gamepad.addButton(0, 0, 1.0, 'gamepad');
