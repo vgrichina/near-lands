@@ -252,7 +252,7 @@ export class Player extends Phaser.GameObjects.Container {
         const prevVelocity = this.body.velocity.clone();
         this.body.setVelocity(0);
 
-        const speed = 1000 * PLAYER_SPEED;
+        const speed = 500 * PLAYER_SPEED;
 
         if (this.scene.joystick) {
             this.body.setVelocityX(this.scene.joystick.forceX / this.scene.joystick.radius * speed);
