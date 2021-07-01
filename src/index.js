@@ -399,20 +399,21 @@ class MyGame extends Phaser.Scene
         let pointerTileX = sourceMap.worldToTileX(worldPoint.x);
         let pointerTileY = sourceMap.worldToTileY(worldPoint.y);
 
-        this.marker.x = sourceMap.tileToWorldX(pointerTileX);
-        this.marker.y = sourceMap.tileToWorldY(pointerTileY);
-        this.marker.setDepth(insideInventory ? UI_DEPTH + 1 : 0);
-
         const uiElements = [this.loginButton, this.logoutButton, this.joystick?.base].filter(elem => !!elem);
         const insideUI = uiElements.some(elem =>
             Phaser.Geom.Rectangle.ContainsPoint(
                 Phaser.Geom.Rectangle.Inflate(elem.getBounds(), 10, 10), this.input.activePointer.position));
 
+
+        this.marker.x = sourceMap.tileToWorldX(pointerTileX);
+        this.marker.y = sourceMap.tileToWorldY(pointerTileY);
+        this.marker.setDepth(insideInventory ? UI_DEPTH + 1 : 0);
+        this.marker.visible = !insideUI;
+
         if (this.input.manager.activePointer.isDown && !insideUI) {
             if (this.shiftKey.isDown || sourceMap == this.inventoryMap) {
                 // TODO: Select proper layer
                 this.selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
-                console.log('tile', this.selectedTile && (this.selectedTile.index - 48));
             } else if (sourceMap == this.mainMap) {
                 if (!walletConnection.isSignedIn()) {
                     updateError('You need to login to draw');
