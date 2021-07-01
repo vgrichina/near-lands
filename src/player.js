@@ -254,20 +254,20 @@ export class Player extends Phaser.GameObjects.Container {
 
         const speed = 1000 * PLAYER_SPEED;
 
-        if (this.scene.gamepad) {
-            this.body.setVelocityX(this.scene.gamepad.joystick.properties.x / 100 * speed);
-            this.body.setVelocityY(this.scene.gamepad.joystick.properties.y / 100 * speed);
+        if (this.scene.joystick) {
+            this.body.setVelocityX(this.scene.joystick.forceX / this.scene.joystick.radius * speed);
+            this.body.setVelocityY(this.scene.joystick.forceY / this.scene.joystick.radius * speed);
         }
 
         if (this.scene.cursors.left.isDown) {
-            this.body.setVelocityX(-100);
+            this.body.setVelocityX(-speed);
         } else if (this.scene.cursors.right.isDown) {
-            this.body.setVelocityX(100);
+            this.body.setVelocityX(speed);
         }
         if (this.scene.cursors.up.isDown) {
-            this.body.setVelocityY(-100);
+            this.body.setVelocityY(-speed);
         } else if (this.scene.cursors.down.isDown) {
-            this.body.setVelocityY(100);
+            this.body.setVelocityY(speed);
         }
 
         if (Math.abs(this.body.velocity.y) < Math.abs(this.body.velocity.x)) {
@@ -284,7 +284,7 @@ export class Player extends Phaser.GameObjects.Container {
             }
         }
 
-        if (!this.scene.gamepad || !this.scene.gamepad.joystick.distance) {
+        if (!this.scene.joystick || this.scene.joystick.force > this.scene.joystick.radius) {
             // Normalize and scale the velocity so that player can't move faster along a diagonal
             this.body.velocity.normalize().scale(speed);
         }

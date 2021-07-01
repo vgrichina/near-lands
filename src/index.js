@@ -8,7 +8,7 @@ import princessSpritesheet from 'url:~src/assets/princess.png'
 
 import 'regenerator-runtime/runtime';
 
-import { VirtualGamepad } from './phaser-plugin-virtual-gamepad'
+import VirtualJoystick from 'phaser3-rex-plugins/plugins/virtualjoystick-plugin'
 
 import { connectP2P } from './p2p'
 import { connectNear, CONTRACT_NAME } from './near'
@@ -371,15 +371,18 @@ class MyGame extends Phaser.Scene
         }
 
         if (isTouchDevice) {
-            this.game.plugins.installScenePlugin('gamepad', VirtualGamepad, 'gamepad', this);
             if (!this.joystick) {
-                this.joystick = this.gamepad.addJoystick(0, 0, 1.2, 'gamepad');
-                this.button = this.gamepad.addButton(0, 0, 1.0, 'gamepad');
+                this.joystick = this.plugins.get('rexVirtualJoystick').add(this, {
+                    x: 0,
+                    y: 0,
+                    radius: 70,
+                    base: this.add.circle(0, 0, 70, 0x888888),
+                    thumb: this.add.circle(0, 0, 30, 0xcccccc),
+                })
             }
-            this.joystick.x = 80;
-            this.joystick.y = height - 80;
-            this.button.x = width - 80;
-            this.button.y = height - 80;
+            this.joystick.x = this.joystick.base.width / 2 + 10;
+            this.joystick.y = height - this.joystick.base.height / 2 - 10;
+            window.joystick = this.joystick;
         }
     }
 
@@ -403,8 +406,7 @@ class MyGame extends Phaser.Scene
         const insideVirtualGamepad =
             this.joystick && (
                 Phaser.Geom.Rectangle.ContainsPoint(
-                    Phaser.Geom.Rectangle.Inflate(this.joystick.getBounds(), 75, 75), this.input.activePointer.position) ||
-                Phaser.Geom.Rectangle.ContainsPoint(this.button.getBounds(), this.input.activePointer.position));
+                    Phaser.Geom.Rectangle.Inflate(this.joystick.base.getBounds(), 75, 75), this.input.activePointer.position));
 
         if (this.input.manager.activePointer.isDown && !insideVirtualGamepad) {
             if (this.shiftKey.isDown || sourceMap == this.inventoryMap) {
@@ -543,6 +545,13 @@ const config = {
     parent: 'phaser-example',
     pixelArt: true,
     roundPixels: true,
+    plugins: {
+        global: [{
+            key: 'rexVirtualJoystick',
+            plugin: VirtualJoystick,
+            start: true
+        }]
+    },
     physics: {
         default: "arcade",
         arcade: {
