@@ -403,12 +403,12 @@ class MyGame extends Phaser.Scene
         this.marker.y = sourceMap.tileToWorldY(pointerTileY);
         this.marker.setDepth(insideInventory ? UI_DEPTH + 1 : 0);
 
-        const insideVirtualGamepad =
-            this.joystick && (
-                Phaser.Geom.Rectangle.ContainsPoint(
-                    Phaser.Geom.Rectangle.Inflate(this.joystick.base.getBounds(), 75, 75), this.input.activePointer.position));
+        const uiElements = [this.loginButton, this.logoutButton, this.joystick?.base].filter(elem => !!elem);
+        const insideUI = uiElements.some(elem =>
+            Phaser.Geom.Rectangle.ContainsPoint(
+                Phaser.Geom.Rectangle.Inflate(elem.getBounds(), 10, 10), this.input.activePointer.position));
 
-        if (this.input.manager.activePointer.isDown && !insideVirtualGamepad) {
+        if (this.input.manager.activePointer.isDown && !insideUI) {
             if (this.shiftKey.isDown || sourceMap == this.inventoryMap) {
                 // TODO: Select proper layer
                 this.selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
