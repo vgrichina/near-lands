@@ -1,8 +1,6 @@
 import { context, ContractPromiseBatch, storage, u128 } from "near-sdk-as";
 import { Chunk, CHUNK_COUNT } from "./model";
 
-const CONTRACT_ID = "near.lands";
-
 @nearBindgen
 export class ChunkMetaData {
     constructor(
@@ -24,7 +22,7 @@ export function getAllChunkMetadata_impl(): ChunkMetaData[] {
 }
 
 export function initChunkMetaData(chunk_x: u32, chunk_y: u32): ChunkMetaData {
-    return new ChunkMetaData(chunk_x, chunk_y, CONTRACT_ID, u128.Zero);
+    return new ChunkMetaData(chunk_x, chunk_y, context.contractName, u128.Zero);
 }
 
 export function offerChunk_impl(chunk_x: u32, chunk_y: u32, price: u128): void {
