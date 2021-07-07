@@ -1,6 +1,6 @@
 import { storage } from "near-sdk-as";
 
-const CHUNK_SIZE = 16;
+export const CHUNK_SIZE = 16;
 const CHUNK_COUNT = 5;
 const START_TILE_ID = "-1";
 
