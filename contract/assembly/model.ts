@@ -1,8 +1,10 @@
-import { storage, u128 } from "near-sdk-as";
+import { storage, context, u128 } from "near-sdk-as";
 
 const CHUNK_SIZE = 16;
 export const CHUNK_COUNT = 5;
 const START_TILE_ID = "-1";
+
+export const WORLD_RADIUS = 8;
 
 @nearBindgen
 export class Chunk {
@@ -48,6 +50,8 @@ export class TileInfo {
 
 @nearBindgen
 export class ChunkMap {
+  x: i32;
+  y: i32;
   chunks: i32[][];
 
   constructor() {
@@ -67,12 +71,17 @@ export class ChunkMap {
     this.chunks[x][y] = chunk.nonce;
   }
 
-  static get(): ChunkMap {
-    return storage.get('chunkMap', new ChunkMap())!;
+  static key(x: i32, y: i32): string {
+    assertWorldBounds(x, y);
+    return 'parcel:' + x.toString() + ':' + y.toString() + ':chunks';
+  }
+
+  static get(x: i32, y: i32): ChunkMap {
+    return storage.get(ChunkMap.key(x, y), new ChunkMap())!;
   }
 
   save(): void {
-    storage.set('chunkMap', this);
+    storage.set(ChunkMap.key(this.x, this.y), this);
   }
 
   setTile(x: i32, y: i32, tileId: string): void {
@@ -108,3 +117,43 @@ function checkMapBounds(x: i32, y: i32): void {
   assert(x < CHUNK_COUNT && x >= 0, 'x out of bounds');
   assert(y < CHUNK_COUNT && y >= 0, 'y out of bounds');
 }
+
+@nearBindgen
+export class LandParcel {
+  nonce: u64 = 0;
+
+  constructor(
+    public x: i32,
+    public y: i32,
+    public owner: string,
+    public price: u128) {
+  }
+
+  static create(x: i32, y: i32): LandParcel {
+    return new LandParcel(x, y, context.contractName, u128.Zero);
+  }
+
+  static key(x: i32, y: i32): string {
+    assertWorldBounds(x, y);
+    return x.toString() + '_' + y.toString();
+  }
+
+  static get(x: i32, y: i32): LandParcel {
+    return storage.get<LandParcel>(LandParcel.key(x, y), LandParcel.create(x, y))!;
+  }
+
+  save(): void {
+    this.assertParcelOwner();
+    storage.set(LandParcel.key(this.x, this.y), this);
+  }
+
+  assertParcelOwner(): void {
+    assert(this.owner == context.predecessor, "You are not the owner of this parcel");
+  }
+}
+
+function assertWorldBounds(x: i32, y: i32): void {
+  assert(x < WORLD_RADIUS && x >= -WORLD_RADIUS, "Parcel out of border");
+  assert(y < WORLD_RADIUS && y >= -WORLD_RADIUS, "Parcel out of border");
+}
+

@@ -1,8 +1,7 @@
 import { storage, u128 } from "near-sdk-as";
-import { LandParcel } from "./marketplace";
 import * as marketplace from "./marketplace";
 
-import { Chunk, ChunkMap, TileInfo } from "./model"
+import { Chunk, ChunkMap, TileInfo, LandParcel } from "./model"
 
 export function getLandParcelRange(x: i32, y: i32, width: i32, height: i32): LandParcel[] {
   return marketplace.getLandParcelRange(x, y, width, height);
@@ -17,12 +16,12 @@ export function buyParcel(x: u32, y: u32): void {
 }
 
 export function setTiles(tiles: TileInfo[]): void {
-  let map = ChunkMap.get();
+  let map = ChunkMap.get(0, 0);
   map.setTiles(tiles);
 }
 
 export function setTile(x: i32, y: i32, tileId: string): void {
-  let map = ChunkMap.get();
+  let map = ChunkMap.get(0, 0);
   map.setTile(x, y, tileId);
 }
 
@@ -31,7 +30,7 @@ export function getChunk(x: i32, y: i32): Chunk {
 }
 
 export function getMap(): i32[][] {
-  return ChunkMap.get().chunks;
+  return ChunkMap.get(0, 0).chunks;
 }
 
 export function getPeerId(accountId: string): string | null {
