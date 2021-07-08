@@ -64,7 +64,7 @@ async function loadBoardAndDraw() {
         }
         for (let j = 0; j < map[i].length; j++) {
             if (!lastMap || lastMap[i][j] != map[i][j]) {
-                let chunk = await contract.getChunk({ x: i * CHUNK_SIZE, y: j * CHUNK_SIZE });
+                let chunk = await contract.getChunk({ x: i, y: j });
                 fullMap[i][j] = chunk;
 
                 updateChunk(i, j);

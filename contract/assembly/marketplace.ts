@@ -4,6 +4,8 @@ const WORLD_RADIUS = 8;
 
 @nearBindgen
 export class LandParcel {
+    nonce: u64 = 0;
+
     constructor(
         public x: i32,
         public y: i32,

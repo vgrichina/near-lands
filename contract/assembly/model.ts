@@ -21,9 +21,7 @@ export class Chunk {
 
   static key(x: i32, y: i32): string {
     checkMapBounds(x, y);
-    let cx = x / CHUNK_SIZE;
-    let cy = y / CHUNK_SIZE;
-    return 'chunk:' + cx.toString() + ':' + cy.toString();
+    return 'chunk:' + x.toString() + ':' + y.toString();
   }
 
   static get(x: i32, y: i32): Chunk {
@@ -32,9 +30,10 @@ export class Chunk {
   }
 
   setTile(x: i32, y: i32, tileId: string): void {
-    checkMapBounds(x, y);
     let ox = x % CHUNK_SIZE;
     let oy = y % CHUNK_SIZE;
+    assert(ox < CHUNK_SIZE && ox >= 0, 'x out of bounds');
+    assert(oy < CHUNK_SIZE && oy >= 0, 'y out of bounds');
     this.nonce++;
     this.tiles[ox][oy] = tileId;
   }
@@ -62,10 +61,10 @@ export class ChunkMap {
   }
 
   setChunk(x: i32, y: i32, chunk: Chunk): void {
+    x = x % CHUNK_COUNT;
+    y = y % CHUNK_COUNT;
     checkMapBounds(x, y);
-    let cx = x / CHUNK_SIZE;
-    let cy = y / CHUNK_SIZE;
-    this.chunks[cx][cy] = chunk.nonce;
+    this.chunks[x][y] = chunk.nonce;
   }
 
   static get(): ChunkMap {
@@ -77,19 +76,21 @@ export class ChunkMap {
   }
 
   setTile(x: i32, y: i32, tileId: string): void {
-    let chunk = Chunk.get(x, y);
+    let cx = x / CHUNK_SIZE;
+    let cy = y / CHUNK_SIZE;
+    let chunk = Chunk.get(cx, cy);
     chunk.setTile(x, y, tileId);
-    storage.set(Chunk.key(x, y), chunk);
-    this.setChunk(x, y, chunk);
+    storage.set(Chunk.key(cx, cy), chunk);
+    this.setChunk(cx, cy, chunk);
     this.save();
   }
 
   setTiles(tiles: TileInfo[]): void {
     assert(tiles.length > 0, 'setting 0 tiles not supported');
     let firstTile = tiles[0];
-    let chunk = Chunk.get(firstTile.x, firstTile.y);
     let chunkX = firstTile.x / CHUNK_SIZE;
     let chunkY = firstTile.y / CHUNK_SIZE;
+    let chunk = Chunk.get(chunkX, chunkY);
     for (let i = 0; i < tiles.length; i++) {
       let tile = tiles[i];
       chunk.setTile(tile.x, tile.y, tile.tileId);
@@ -97,13 +98,13 @@ export class ChunkMap {
       assert(chunkY == tile.y / CHUNK_SIZE, "all tiles must be in same chunk");
     }
 
-    storage.set(Chunk.key(firstTile.x, firstTile.y), chunk);
-    this.setChunk(firstTile.x, firstTile.y, chunk);
+    storage.set(Chunk.key(chunkX, chunkY), chunk);
+    this.setChunk(chunkX, chunkY, chunk);
     this.save()
   }
 }
 
 function checkMapBounds(x: i32, y: i32): void {
-  assert(x < CHUNK_COUNT * CHUNK_SIZE && x >= 0, 'x out of bounds');
-  assert(y < CHUNK_COUNT * CHUNK_SIZE && y >= 0, 'y out of bounds');
+  assert(x < CHUNK_COUNT && x >= 0, 'x out of bounds');
+  assert(y < CHUNK_COUNT && y >= 0, 'y out of bounds');
 }
