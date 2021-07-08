@@ -143,7 +143,8 @@ export class Player extends Phaser.GameObjects.Container {
         scene.physics.world.enableBody(this);
         this.body
             .setSize(20, 20)
-            .setOffset(-10, 10);
+            .setOffset(-10, 10)
+            .setCollideWorldBounds(true);
 
         scene.physics.add.collider(this, scene.mainLayer);
         scene.physics.add.collider(this, scene.autotileLayer);

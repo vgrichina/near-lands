@@ -254,6 +254,7 @@ class MyGame extends Phaser.Scene
         this.mainMap.setLayer(this.mainLayer);
 
         this.cameras.main.setBounds(0, 0, this.mainMap.widthInPixels, this.mainMap.heightInPixels);
+        this.physics.world.setBounds(0, 0, this.mainLayer.width, this.mainLayer.height, true, true, true, true);
 
         this.cursors = this.input.keyboard.createCursorKeys();
         this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
