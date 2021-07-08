@@ -2,11 +2,10 @@ import { context, ContractPromiseBatch, u128 } from "near-sdk-as";
 
 import { LandParcel } from "./model";
 
-// TODO: Probably needs to take a range instead of returning all?
 export function getLandParcelRange(x: i32, y: i32, width: i32, height: i32): LandParcel[] {
     const parcel: LandParcel[] = [];
-    for (let i = 0; i < x + width; i++) {
-        for (let j = 0; j < y + height; j++) {
+    for (let i = x; i < x + width; i++) {
+        for (let j = y; j < y + height; j++) {
             parcel.push(LandParcel.get(i, j));
         }
     }
