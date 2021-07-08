@@ -85,6 +85,8 @@ export class ChunkMap {
     if (!result.chunkNonces) {
       result.initNonces();
     }
+    result.x = x;
+    result.y = y;
     return result;
   }
 
@@ -100,10 +102,13 @@ export class ChunkMap {
     storage.set(Chunk.key(cx, cy), chunk);
     this.setChunk(cx, cy, chunk);
     this.save();
+
+    this.updateParcelNonce();
   }
 
   setTiles(tiles: TileInfo[]): void {
     assert(tiles.length > 0, 'setting 0 tiles not supported');
+
     let firstTile = tiles[0];
     let chunkX = firstTile.x / CHUNK_SIZE;
     let chunkY = firstTile.y / CHUNK_SIZE;
@@ -118,6 +123,14 @@ export class ChunkMap {
     storage.set(Chunk.key(chunkX, chunkY), chunk);
     this.setChunk(chunkX, chunkY, chunk);
     this.save()
+
+    this.updateParcelNonce();
+  }
+
+  private updateParcelNonce(): void {
+    const parcel = LandParcel.get(this.x, this.y);
+    parcel.nonce++;
+    parcel.save();
   }
 }
 
@@ -151,7 +164,6 @@ export class LandParcel {
   }
 
   save(): void {
-    this.assertParcelOwner();
     storage.set(LandParcel.key(this.x, this.y), this);
   }
 

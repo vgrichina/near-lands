@@ -15,6 +15,7 @@ export function getLandParcelRange(x: i32, y: i32, width: i32, height: i32): Lan
 
 export function offerParcel(x: i32, y: i32, price: u128): void {
     const parcel = LandParcel.get(x, y);
+    parcel.assertParcelOwner();
     parcel.price = price;
     parcel.save();
 }
