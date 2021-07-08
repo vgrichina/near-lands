@@ -8,7 +8,7 @@ import princessSpritesheet from 'url:~src/assets/princess.png'
 
 import 'regenerator-runtime/runtime';
 
-import { VirtualGamepad } from './phaser-plugin-virtual-gamepad'
+import VirtualJoystick from 'phaser3-rex-plugins/plugins/virtualjoystick-plugin'
 
 import { connectP2P } from './p2p'
 import { connectNear, CONTRACT_NAME } from './near'
@@ -79,37 +79,55 @@ async function loadBoardAndDraw() {
 let setTileQueue = [];
 let setTileBatch = [];
 function putTileOnChain(x, y, tileId) {
-    if (setTileQueue.length > 0) {
-        const last = setTileQueue[setTileQueue.length - 1];
-        if (last.x == x && last.y == y && last.tileId == tileId) {
-            return;
-        }
+    if (setTileQueue.concat(setTileBatch).some(tile => x == tile.x && y == tile.y && tileId == tile.tileId)) {
+        return;
     }
 
     console.log('putTileOnChain', x, y, tileId);
-
     setTileQueue.push({ x, y, tileId });
     updatePending();
 }
 
 function updatePending() {
-    if (setTileQueue.length == 0 && setTileBatch.length == 0) {
-        $forEach('.pending-tiles', elem => elem.style = 'display: none;');
+    const scene = game.scene.scenes[0];
+
+    if (!scene || !scene.messageLabel) {
         return;
     }
 
-    $forEach('.pending-tiles', elem => {
-        elem.style = 'display: inline;';
-        elem.innerHTML = `Pending: ${setTileQueue.length + setTileBatch.length}`;
-    });
+    if (setTileQueue.length == 0 && setTileBatch.length == 0) {
+        scene.messageLabel.visible = false;
+        return;
+    }
+
+    scene.messageLabel.visible = true;
+    scene.messageLabel.text = `Pending: ${setTileQueue.length + setTileBatch.length}`;
 }
 
 function updateError(e) {
     console.log('updateError', e);
-    $forEach('.error', elem => {
-        elem.innerHTML = `Last error: ${e}`;
-        elem.style.display = 'inline';
+
+    const scene = game.scene.scenes[0];
+    if (!scene) {
+        return;
+    }
+
+    const { width } = scene.cameras.main;
+
+    if (scene.errorLabel) {
+        scene.errorLabel.destroy();
+    }
+    scene.errorLabel = scene.add.text(0, 0, `Last error: ${e}`, {
+        fontSize: '14px',
+        padding: { x: 10, y: 5 },
+        backgroundColor: '#000000',
+        fill: '#f00'
     });
+    scene.errorLabel.setScrollFactor(0);
+    scene.errorLabel.setDepth(Number.MAX_VALUE);
+    scene.errorLabel.setAlpha(0.75);
+    scene.errorLabel.x = Math.floor((width - scene.errorLabel.width) / 2);
+    scene.errorLabel.y = scene.messageLabel.y - 10 - scene.errorLabel.height;
 }
 
 async function setNextPixel() {
@@ -200,7 +218,7 @@ class MyGame extends Phaser.Scene
         });
 
         const inventoryX = this.cameras.main.width - this.inventoryMap.widthInPixels - tiles.tileWidth;
-        const inventoryY = tiles.tileHeight;
+        const inventoryY = tiles.tileHeight * 1.5;
         this.inventoryLayer = this.inventoryMap.createLayer(0, tiles, inventoryX, inventoryY);
         this.inventoryLayer.setScrollFactor(0);
         this.inventoryLayer.setDepth(UI_DEPTH);
@@ -235,16 +253,10 @@ class MyGame extends Phaser.Scene
         this.autotileLayer = this.mainMap.createBlankLayer('Main-autotile', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
         this.mainMap.setLayer(this.mainLayer);
 
-        this.createInventory(this.desertTiles);
-
-        this.selectedTile = this.inventoryMap.getTileAt(5, 3);
-
         this.cameras.main.setBounds(0, 0, this.mainMap.widthInPixels, this.mainMap.heightInPixels);
 
         this.cursors = this.input.keyboard.createCursorKeys();
-
         this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
-
         this.inventoryKeys = [
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
@@ -256,28 +268,9 @@ class MyGame extends Phaser.Scene
         const roundPixels = true;
         this.cameras.main.startFollow(this.player, roundPixels);
 
-        const isTouchDevice = navigator.maxTouchPoints > 0;
+        this.createOrUpdateUI();
 
-        if (!isTouchDevice) {
-            var help = this.add.text(16, 16, 'Left-click to paint.\nShift + Left-click to select tile.\nArrows to scroll. Digits to switch tiles.', {
-                fontSize: '18px',
-                padding: { x: 10, y: 5 },
-                backgroundColor: '#000000',
-                fill: '#ffffff',
-                // NOTE: Looks like Brave needs explicit line height
-                lineHeight: 28
-            });
-            help.setScrollFactor(0);
-            help.setDepth(Number.MAX_VALUE);
-            help.setAlpha(0.75);
-        }
-
-        if (isTouchDevice) {
-            this.game.plugins.installScenePlugin('gamepad', VirtualGamepad, 'gamepad', this);
-            const { width, height } = this.cameras.main;
-            this.joystick = this.gamepad.addJoystick(80, height - 80, 1.2, 'gamepad');
-            this.button = this.gamepad.addButton(width - 80, height - 80, 1.0, 'gamepad');
-        }
+        this.selectedTile = this.inventoryMap.getTileAt(5, 3);
 
         loadBoardAndDraw().catch(console.error);
 
@@ -291,6 +284,106 @@ class MyGame extends Phaser.Scene
                 .setAlpha(0.75)
                 .setDepth(20);
         };
+
+        this.scale.on('resize', () => {
+            this.createOrUpdateUI();
+        });
+    }
+
+    createOrUpdateUI() {
+        const { width, height } = this.cameras.main;
+
+        this.createInventory(this.desertTiles);
+
+        if (this.logoutButton) {
+            this.logoutButton.destroy();
+            this.logoutButton = null;
+        }
+        if (this.loginButton) {
+            this.loginButton.destroy();
+            this.loginButton = null;
+        }
+        if (walletConnection.isSignedIn()) {
+            this.logoutButton = this.add.text(0, 0, 'Logout', {
+                fontSize: '16px',
+                padding: { x: 10, y: 5 },
+                backgroundColor: '#000000',
+            });
+            this.logoutButton.setScrollFactor(0);
+            this.logoutButton.setDepth(Number.MAX_VALUE);
+            this.logoutButton.setAlpha(0.75);
+            this.logoutButton.setInteractive({ useHandCursor: true });
+            this.logoutButton.on('pointerup', () => {
+                logout();
+            });
+            this.logoutButton.x = width - 10 - this.logoutButton.width;
+            this.logoutButton.y = 10;
+        } else {
+            this.loginButton = this.add.text(0, 0, 'Login with NEAR', {
+                fontSize: '16px',
+                padding: { x: 10, y: 5 },
+                backgroundColor: '#000000',
+            });
+            this.loginButton.setScrollFactor(0);
+            this.loginButton.setDepth(Number.MAX_VALUE);
+            this.loginButton.setAlpha(0.75);
+            this.loginButton.setInteractive({ useHandCursor: true });
+            this.loginButton.on('pointerup', () => {
+                login();
+            });
+            this.loginButton.x = width - 10 - this.loginButton.width;
+            this.loginButton.y = 10;
+        }
+
+        if (this.messageLabel) {
+            this.messageLabel.destroy();
+        }
+        this.messageLabel = this.add.text(0, 0, 'Pending ...', {
+            fontSize: '14px',
+            padding: { x: 10, y: 5 },
+            backgroundColor: '#000000',
+        });
+        this.messageLabel.setScrollFactor(0);
+        this.messageLabel.setDepth(Number.MAX_VALUE);
+        this.messageLabel.setAlpha(0.75);
+        this.messageLabel.x = Math.floor((width - this.messageLabel.width) / 2);
+        this.messageLabel.y = height - 10 - this.messageLabel.height;
+        updatePending();
+
+        const isTouchDevice = navigator.maxTouchPoints > 0;
+
+        if (!isTouchDevice) {
+            if (this.help) {
+                this.help.destroy();
+            }
+
+            this.help = this.add.text(16, 16, 'Left-click to paint.\nShift + Left-click to select tile.\nArrows to scroll. Digits to switch tiles.', {
+                fontSize: '14px',
+                padding: { x: 10, y: 5 },
+                backgroundColor: '#000000',
+                fill: '#ffffff',
+                // NOTE: Looks like Brave needs explicit line height
+                lineHeight: 28
+            });
+            this.help.setScrollFactor(0);
+            this.help.setDepth(Number.MAX_VALUE);
+            this.help.setAlpha(0.75);
+        }
+
+        if (isTouchDevice) {
+            if (!this.joystick) {
+                this.joystick = this.plugins.get('rexVirtualJoystick').add(this, {
+                    x: 0,
+                    y: 0,
+                    radius: 70,
+                    base: this.add.circle(0, 0, 70, 0x888888),
+                    thumb: this.add.circle(0, 0, 30, 0xcccccc),
+                })
+            }
+            this.joystick.x = this.joystick.base.width / 2 + 10;
+            this.joystick.y = height - this.joystick.base.height / 2 - 10;
+            window.joystick = this.joystick;
+        }
     }
 
     update(time, delta) {
@@ -306,21 +399,21 @@ class MyGame extends Phaser.Scene
         let pointerTileX = sourceMap.worldToTileX(worldPoint.x);
         let pointerTileY = sourceMap.worldToTileY(worldPoint.y);
 
+        const uiElements = [this.loginButton, this.logoutButton, this.joystick?.base].filter(elem => !!elem);
+        const insideUI = uiElements.some(elem =>
+            Phaser.Geom.Rectangle.ContainsPoint(
+                Phaser.Geom.Rectangle.Inflate(elem.getBounds(), 10, 10), this.input.activePointer.position));
+
+
         this.marker.x = sourceMap.tileToWorldX(pointerTileX);
         this.marker.y = sourceMap.tileToWorldY(pointerTileY);
         this.marker.setDepth(insideInventory ? UI_DEPTH + 1 : 0);
+        this.marker.visible = !insideUI;
 
-        const insideVirtualGamepad =
-            this.joystick && (
-                Phaser.Geom.Rectangle.ContainsPoint(
-                    Phaser.Geom.Rectangle.Inflate(this.joystick.getBounds(), 75, 75), this.input.activePointer.position) ||
-                Phaser.Geom.Rectangle.ContainsPoint(this.button.getBounds(), this.input.activePointer.position));
-
-        if (this.input.manager.activePointer.isDown && !insideVirtualGamepad) {
+        if (this.input.manager.activePointer.isDown && !insideUI) {
             if (this.shiftKey.isDown || sourceMap == this.inventoryMap) {
                 // TODO: Select proper layer
                 this.selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
-                console.log('tile', this.selectedTile && (this.selectedTile.index - 48));
             } else if (sourceMap == this.mainMap) {
                 if (!walletConnection.isSignedIn()) {
                     updateError('You need to login to draw');
@@ -443,12 +536,23 @@ class MyGame extends Phaser.Scene
 
 const config = {
     type: Phaser.CANVAS,
-    width: window.innerWidth - 20,
-    height: window.innerHeight - 70,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    },
     backgroundColor: '#2d2d2d',
     parent: 'phaser-example',
     pixelArt: true,
     roundPixels: true,
+    plugins: {
+        global: [{
+            key: 'rexVirtualJoystick',
+            plugin: VirtualJoystick,
+            start: true
+        }]
+    },
     physics: {
         default: "arcade",
         arcade: {

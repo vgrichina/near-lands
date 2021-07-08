@@ -1,10 +1,8 @@
-# Phaser 3 Webpack Project Template
+# Phaser 3 Decentralized Multiplayer Game Project Template
 
-A Phaser 3 project template with ES6 support via [Babel 7](https://babeljs.io/) and [Webpack 4](https://webpack.js.org/) that includes hot-reloading for development and production-ready builds.
+A Phaser 3 project template with ES6 support via [Babel 7](https://babeljs.io/) and [Parcel](https://v2.parceljs.org) that includes hot-reloading for development and production-ready builds.
 
-This has been updated for Phaser 3.50.0 version and above.
-
-Loading images via JavaScript module `import` is also supported, although not recommended.
+This project demonstrates how you can use [NEAR blockchain](https://near.org) for user accounts, storage and turn-based game logic. It also demonstrates usage of [simple-peer](https://github.com/feross/simple-peer) to enable real time peer to peer communication between users (used to share location of every user).
 
 ## Requirements
 
@@ -22,7 +20,18 @@ Loading images via JavaScript module `import` is also supported, although not re
 
 After cloning the repo, run `npm install` from your project directory. Then, you can start the local development server by running `npm start`.
 
-After starting the development server with `npm start`, you can edit any files in the `src` folder and webpack will automatically recompile and reload your server (available at `http://localhost:8080` by default).
+After starting the development server with `npm start`, you can edit any files in the `src` folder and Parcel will automatically recompile and reload your server (available at `http://localhost:1234` by default).
+
+### Important files / directories
+
+- `static/` – static assets that gonna be copied as is to `dist/` folder. Includes `lpc-character` folder which contains character spritesheets provided by https://github.com/jrconway3/Universal-LPC-spritesheet project. You can use http://gaurav.munjal.us/Universal-LPC-Spritesheet-Character-Generator/ to explore available sprites.
+- `src/assets` – static assets that can be included from `.js` files and processed by Parcel (including tile images)
+- `src/index.js` – main JS entry point and game logic
+- `src/near.js` – boilerplate related to NEAR blockchain
+- `src/p2p.js` – common code to establish peer to peer connectivity
+– `src/player.js` – logic related to player characters (including remote)
+- `src/phaser-plugin-virtual-gamepad.js` – virtual gamepad plugin for use with touch screen devices
+- `index.html` – entry point for webapp build
 
 ## Customizing the Template
 
@@ -38,12 +47,12 @@ You can write modern ES6+ JavaScript and Babel will transpile it to a version of
 ]
  ```
 
-### Webpack
+### Parcel
 
-If you want to customize your build, such as adding a new webpack loader or plugin (i.e. for loading CSS or fonts), you can modify the `webpack/base.js` file for cross-project changes, or you can modify and/or create new configuration files and target them in specific npm tasks inside of `package.json'.
+Check out https://v2.parceljs.org/ for documentation on how to customize configuration and common recipes.
 
 ## Deploying Code
 
-After you run the `npm run build` command, your code will be built into a single bundle located at `dist/bundle.min.js` along with any other assets you project depended. 
+After you run the `npm run build` command, your code will be built in the `dist/` folder along with any other assets you project depended. 
 
 If you put the contents of the `dist` folder in a publicly-accessible location (say something like `http://mycoolserver.com`), you should be able to open `http://mycoolserver.com/index.html` and play your game.
