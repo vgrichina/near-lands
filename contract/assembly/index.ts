@@ -1,18 +1,19 @@
 import { storage, u128 } from "near-sdk-as";
-import { buyParcel_impl, LandParcel, getAllLandParcel_impl, offerParcel_impl} from "./marketplace";
+import { LandParcel } from "./marketplace";
+import * as marketplace from "./marketplace";
 
 import { Chunk, ChunkMap, TileInfo } from "./model"
 
-export function getAllLandParcel(): LandParcel[] {
-  return getAllLandParcel_impl();
+export function getLandParcelRange(x: i32, y: i32, width: i32, height: i32): LandParcel[] {
+  return marketplace.getLandParcelRange(x, y, width, height);
 }
 
-export function offerChunk(parcelX: u32, parcelY: u32, price: string): void {
-  offerParcel_impl(parcelX, parcelY, u128.from(price));
+export function offerChunk(x: u32, y: u32, price: string): void {
+  marketplace.offerParcel(x, y, u128.from(price));
 }
 
-export function buyParcel(chunkX: u32, chunkY: u32): void {
-  buyParcel_impl(chunkX, chunkY);
+export function buyParcel(x: u32, y: u32): void {
+  marketplace.buyParcel(x, y);
 }
 
 export function setTiles(tiles: TileInfo[]): void {
