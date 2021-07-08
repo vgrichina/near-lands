@@ -50,7 +50,7 @@ async function logout() {
 }
 
 const CHUNK_SIZE = 16;
-const CHUNK_COUNT = 5;
+const CHUNK_COUNT = 4;
 
 let lastMap = null;
 let fullMap = [];

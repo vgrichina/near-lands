@@ -1,7 +1,7 @@
 import { storage, context, u128 } from "near-sdk-as";
 
 const CHUNK_SIZE = 16;
-export const CHUNK_COUNT = 5;
+export const CHUNK_COUNT = 4;
 const START_TILE_ID = "-1";
 
 export const WORLD_RADIUS = 8;
@@ -52,14 +52,18 @@ export class TileInfo {
 export class ChunkMap {
   x: i32;
   y: i32;
-  chunks: i32[][];
+  chunkNonces: i32[][];
 
   constructor() {
-    this.chunks = new Array<Array<i32>>();
+    this.initNonces();
+  }
+
+  private initNonces(): void {
+    this.chunkNonces = new Array<Array<i32>>();
     for (let i = 0; i < CHUNK_COUNT; i++) {
-      this.chunks[i] = new Array<i32>(CHUNK_COUNT);
+      this.chunkNonces[i] = new Array<i32>(CHUNK_COUNT);
       for (let j = 0; j < CHUNK_COUNT; j++) {
-        this.chunks[i][j] = 0;
+        this.chunkNonces[i][j] = 0;
       }
     }
   }
@@ -68,7 +72,7 @@ export class ChunkMap {
     x = x % CHUNK_COUNT;
     y = y % CHUNK_COUNT;
     checkMapBounds(x, y);
-    this.chunks[x][y] = chunk.nonce;
+    this.chunkNonces[x][y] = chunk.nonce;
   }
 
   static key(x: i32, y: i32): string {
@@ -77,7 +81,11 @@ export class ChunkMap {
   }
 
   static get(x: i32, y: i32): ChunkMap {
-    return storage.get(ChunkMap.key(x, y), new ChunkMap())!;
+    const result = storage.get(ChunkMap.key(x, y), new ChunkMap())!;
+    if (!result.chunkNonces) {
+      result.initNonces();
+    }
+    return result;
   }
 
   save(): void {

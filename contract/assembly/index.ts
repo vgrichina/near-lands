@@ -30,7 +30,7 @@ export function getChunk(x: i32, y: i32): Chunk {
 }
 
 export function getMap(): i32[][] {
-  return ChunkMap.get(0, 0).chunks;
+  return ChunkMap.get(0, 0).chunkNonces;
 }
 
 export function getPeerId(accountId: string): string | null {
