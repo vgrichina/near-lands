@@ -11,8 +11,25 @@ export class LandParcel {
         public price: u128) {
     }
 
+    static create(x: i32, y: i32): LandParcel {
+        return new LandParcel(x, y, context.contractName, u128.Zero);
+    }
+
     static key(x: i32, y: i32): string {
         return x.toString() + '_' + y.toString();
+    }
+
+    static get(x: i32, y: i32): LandParcel {
+        assertWorldSize(x, y);
+        return storage.get<LandParcel>(LandParcel.key(x, y), LandParcel.create(x, y))!;
+    }
+
+    save(x: i32, y: i32): void {
+        assertParcelOwner(x, y);
+        assertWorldSize(x, y);
+        this.x = x;
+        this.y = y;
+        storage.set(LandParcel.key(x, y), this);
     }
 }
 
@@ -21,25 +38,20 @@ export function getLandParcelRange(x: i32, y: i32, width: i32, height: i32): Lan
     const parcel: LandParcel[] = [];
     for (let i = 0; i < x + width; i++) {
         for (let j = 0; j < y + height; j++) {
-            parcel.push(getLandParcel(i, j));
+            parcel.push(LandParcel.get(i, j));
         }
     }
     return parcel;
 }
 
-export function initLandParcel(x: i32, y: i32): LandParcel {
-    return new LandParcel(x, y, context.contractName, u128.Zero);
-}
-
 export function offerParcel(x: i32, y: i32, price: u128): void {
-    const parcel = getLandParcel(x, y);
+    const parcel = LandParcel.get(x, y);
     parcel.price = price;
-    saveLandParcel(x, y, parcel);
+    parcel.save(x, y);
 }
 
 export function buyParcel(x: i32, y: i32): void {
-
-    const parcel = getLandParcel(x, y);
+    const parcel = LandParcel.get(x, y);
     assert(parcel.price > u128.Zero, "Parcel not for sell");
     assert(context.attachedDeposit == parcel.price, "Attached amount of NEAR is not correct.");
     const old_owner = parcel.owner;
@@ -49,18 +61,7 @@ export function buyParcel(x: i32, y: i32): void {
 }
 
 function assertParcelOwner(x: i32, y: i32): void {
-    assert(getLandParcel(x, y).owner == context.predecessor, "You are not the owner of this parcel");
-}
-
-function getLandParcel(x: i32, y: i32): LandParcel {
-    assertWorldSize(x, y);
-    return storage.get<LandParcel>(LandParcel.key(x, y), initLandParcel(x, y))!;
-}
-
-function saveLandParcel(x: i32, y: i32, data: LandParcel): void {
-    assertParcelOwner(x, y);
-    assertWorldSize(x, y);
-    storage.set(LandParcel.key(x, y), data);
+    assert(LandParcel.get(x, y).owner == context.predecessor, "You are not the owner of this parcel");
 }
 
 function assertWorldSize(x: i32, y: i32): void {
