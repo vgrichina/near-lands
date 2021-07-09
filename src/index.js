@@ -422,8 +422,7 @@ class MyGame extends Phaser.Scene
                 }
 
                 this.mainLayer.putTileAt(this.selectedTile, pointerTileX, pointerTileY);
-                // TODO: Only do it for tiles that got updated
-                this.populateAutotile();
+                this.populateAutotile(pointerTileX - 1, pointerTileY - 1, 3, 3);
 
                 putTileOnChain(pointerTileX, pointerTileY, `${this.selectedTile.index}`);
             }
@@ -450,7 +449,13 @@ class MyGame extends Phaser.Scene
         }
     }
 
-    populateAutotile() {
+    populateAutotile(startX, startY, width, height) {
+        startX = Math.max(0, startX);
+        startY = Math.max(0, startY);
+
+        const endX = Math.min(startX + width, this.mainMap.width);
+        const endY = Math.min(startY + height, this.mainMap.height);
+
         let tilesetConfigs = [];
         for (let tileset of this.lpcTiles) {
             const toGid = localId => (tileset.firstgid + localId).toString();
@@ -480,9 +485,8 @@ class MyGame extends Phaser.Scene
         let sideDirections = [1, 3, 5, 7];
         let innerCornerDirections = [[1, 3], [1, 5], [3, 7], [5, 7]];
 
-        let { width, height } = this.mainMap;
-        for (let x = 0; x < width; x++) {
-            for (let y = 0; y < height; y++) {
+        for (let x = startX; x < endX; x++) {
+            for (let y = startY; y < endY; y++) {
                 let { index: tileId } = this.mainLayer.getTileAt(x, y, true);
 
                 let autotileId;
@@ -497,7 +501,7 @@ class MyGame extends Phaser.Scene
                             return;
                         }
 
-                        if (x + dx < 0 || x + dx >= width || y + dy < 0 || y + dy >= height) {
+                        if (x + dx < 0 || x + dx >= this.mainMap.width || y + dy < 0 || y + dy >= this.mainMap.height) {
                             return;
                         }
 
@@ -584,8 +588,7 @@ function updateChunk(i, j) {
     scene.mainLayer.setCollisionBetween(30, 31);
     scene.mainLayer.setCollisionBetween(scene.waterTiles.firstgid, scene.waterTiles.firstgid + scene.waterTiles.total);
 
-    // TODO: Only do it for tiles that got updated
-    scene.populateAutotile();
+    scene.populateAutotile(i * CHUNK_SIZE - 1, j * CHUNK_SIZE - 1, CHUNK_SIZE + 2, CHUNK_SIZE + 2);
 
     scene.autotileLayer.setCollisionBetween(scene.waterTiles.firstgid, scene.waterTiles.firstgid + scene.waterTiles.total);
 }
