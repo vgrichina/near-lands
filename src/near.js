@@ -20,7 +20,7 @@ export async function connectNear() {
     }
 
     const contract = new Contract(account, CONTRACT_NAME, {
-        viewMethods: ["getMap", "getChunk", "getPeerId", "getAccountId"],
+        viewMethods: ["getChunk", "getParcelNonces", "getPeerId", "getAccountId"],
         changeMethods: ["setTiles", "setPeerId"],
         sender: account.accountId
     });

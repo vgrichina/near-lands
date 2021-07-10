@@ -4,7 +4,7 @@ const CHUNK_SIZE = 16;
 export const CHUNK_COUNT = 4;
 const START_TILE_ID = "-1";
 
-export const WORLD_RADIUS = 8;
+export const PARCEL_COUNT = 8;
 
 @nearBindgen
 export class Chunk {
@@ -34,8 +34,8 @@ export class Chunk {
   setTile(x: i32, y: i32, tileId: string): void {
     let ox = x % CHUNK_SIZE;
     let oy = y % CHUNK_SIZE;
-    assert(ox < CHUNK_SIZE && ox >= 0, 'x out of bounds');
-    assert(oy < CHUNK_SIZE && oy >= 0, 'y out of bounds');
+    assert(ox < CHUNK_SIZE && ox >= 0, 'x out of bounds: ' + x.toString());
+    assert(oy < CHUNK_SIZE && oy >= 0, 'y out of bounds: ' + y.toString());
     this.nonce++;
     this.tiles[ox][oy] = tileId;
   }
@@ -135,8 +135,8 @@ export class ChunkMap {
 }
 
 function checkMapBounds(x: i32, y: i32): void {
-  assert(x < CHUNK_COUNT && x >= 0, 'x out of bounds');
-  assert(y < CHUNK_COUNT && y >= 0, 'y out of bounds');
+  assert(x < CHUNK_COUNT * PARCEL_COUNT && x >= 0, 'x out of bounds: ' + x.toString());
+  assert(y < CHUNK_COUNT * PARCEL_COUNT && y >= 0, 'y out of bounds: ' + y.toString());
 }
 
 @nearBindgen
@@ -173,7 +173,7 @@ export class LandParcel {
 }
 
 function assertWorldBounds(x: i32, y: i32): void {
-  assert(x < WORLD_RADIUS && x >= -WORLD_RADIUS, "Parcel out of border");
-  assert(y < WORLD_RADIUS && y >= -WORLD_RADIUS, "Parcel out of border");
+  assert(x < PARCEL_COUNT && x >= 0, "Parcel x out of border: " + x.toString());
+  assert(y < PARCEL_COUNT && y >= 0, "Parcel y out of border: " + y.toString());
 }
 

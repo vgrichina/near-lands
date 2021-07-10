@@ -52,26 +52,52 @@ async function logout() {
 const CHUNK_SIZE = 16;
 const CHUNK_COUNT = 4;
 const PARCEL_COUNT = 8;
+const PARCEL_SIZE_PIXELS = CHUNK_COUNT * CHUNK_SIZE * 32;
+const WIDTH_TILES = CHUNK_COUNT * CHUNK_SIZE * PARCEL_COUNT;
+const HEIGHT_TILES = WIDTH_TILES;
 
 let lastMap = [...Array(PARCEL_COUNT)].map(() => [...Array(PARCEL_COUNT)]);
 let fullMap = [...Array(PARCEL_COUNT)].map(() => [...Array(PARCEL_COUNT)]);
 async function loadBoardAndDraw() {
     const { contract } = await connectPromise;
 
-    const map = await contract.getMap();
-    const chunksToUpdate = [];
-    for (let i = 0; i < map.length; i++) {
-        for (let j = 0; j < map[i].length; j++) {
-            if (lastMap[i][j] != map[i][j]) {
-                chunksToUpdate.push({ i, j });
+    const scene = game.scene.scenes[0];
+    const { scrollX, scrollY, displayWidth, displayHeight } = scene.cameras.main;
+    const startX = Math.floor(scrollX / PARCEL_SIZE_PIXELS);
+    const startY = Math.floor(scrollY / PARCEL_SIZE_PIXELS);
+    const endX = Math.ceil((scrollX + displayWidth) / PARCEL_SIZE_PIXELS);
+    const endY = Math.ceil((scrollY + displayHeight) / PARCEL_SIZE_PIXELS);
+    console.log('-', scrollX, scrollY, displayWidth, displayHeight, PARCEL_SIZE_PIXELS);
+    console.log('startX', startX, 'startY', startY, endX, endY);
+
+    const map = lastMap.map(row => [...row]);
+    for (let parcelX = startX; parcelX < endX; parcelX++) {
+        for (let parcelY = startY; parcelY < endY; parcelY++) {
+            console.log('x', parcelX, 'y', parcelY);
+            const parcelNonces = await contract.getParcelNonces({ x: parcelX, y: parcelY });
+            const chunksToUpdate = [];
+
+            for (let i = 0; i < parcelNonces.length; i++) {
+                for (let j = 0; j < parcelNonces[i].length; j++) {
+                    map[parcelX * CHUNK_COUNT + i][parcelY * CHUNK_COUNT + j] = parcelNonces[i][j];
+                }
             }
+            
+            for (let i = 0; i < map.length; i++) {
+                for (let j = 0; j < map[i].length; j++) {
+                    if (lastMap[i][j] != map[i][j]) {
+                        chunksToUpdate.push({ i, j });
+                    }
+                }
+            }
+            await Promise.all(chunksToUpdate.map(async ({ i, j }) => {
+                fullMap[i][j] = await contract.getChunk({ x: i, y: j });
+                updateChunk(i, j);
+            }));
         }
     }
-    await Promise.all(chunksToUpdate.map(async ({ i, j }) => {
-        fullMap[i][j] = await contract.getChunk({ x: i, y: j });
-        updateChunk(i, j);
-    }));
     lastMap = map;
+
 
     setTimeout(loadBoardAndDraw, 5000);
 }
@@ -239,8 +265,8 @@ class MyGame extends Phaser.Scene
 
         this.mainMap = this.make.tilemap({
             key: 'mainMap',
-            width: CHUNK_SIZE * CHUNK_COUNT,
-            height: CHUNK_SIZE * CHUNK_COUNT
+            width: WIDTH_TILES,
+            height: HEIGHT_TILES
         });
 
         this.desertTiles = this.mainMap.addTilesetImage('desert', 'desert', 32, 32, 1, 1);
@@ -249,8 +275,8 @@ class MyGame extends Phaser.Scene
         this.allTiles = [this.desertTiles, this.grassTiles, this.waterTiles];
         this.lpcTiles = [this.grassTiles, this.waterTiles];
 
-        this.mainLayer = this.mainMap.createBlankLayer('Main', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
-        this.autotileLayer = this.mainMap.createBlankLayer('Main-autotile', this.allTiles, 0, 0, CHUNK_SIZE * CHUNK_SIZE, CHUNK_SIZE * CHUNK_COUNT);
+        this.mainLayer = this.mainMap.createBlankLayer('Main', this.allTiles, 0, 0, WIDTH_TILES, HEIGHT_TILES);
+        this.autotileLayer = this.mainMap.createBlankLayer('Main-autotile', this.allTiles, 0, 0, WIDTH_TILES, HEIGHT_TILES);
         this.mainMap.setLayer(this.mainLayer);
 
         this.cameras.main.setBounds(0, 0, this.mainMap.widthInPixels, this.mainMap.heightInPixels);

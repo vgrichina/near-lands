@@ -29,8 +29,8 @@ export function getChunk(x: i32, y: i32): Chunk {
   return Chunk.get(x, y);
 }
 
-export function getMap(): i32[][] {
-  return ChunkMap.get(0, 0).chunkNonces;
+export function getParcelNonces(x: i32, y: i32): i32[][] {
+  return ChunkMap.get(x, y).chunkNonces;
 }
 
 export function getPeerId(accountId: string): string | null {
