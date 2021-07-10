@@ -51,26 +51,26 @@ async function logout() {
 
 const CHUNK_SIZE = 16;
 const CHUNK_COUNT = 4;
+const PARCEL_COUNT = 8;
 
-let lastMap = null;
-let fullMap = [];
+let lastMap = [...Array(PARCEL_COUNT)].map(() => [...Array(PARCEL_COUNT)]);
+let fullMap = [...Array(PARCEL_COUNT)].map(() => [...Array(PARCEL_COUNT)]);
 async function loadBoardAndDraw() {
     const { contract } = await connectPromise;
 
     const map = await contract.getMap();
+    const chunksToUpdate = [];
     for (let i = 0; i < map.length; i++) {
-        if (!lastMap) {
-            fullMap.push(Array(map[i].length));
-        }
         for (let j = 0; j < map[i].length; j++) {
-            if (!lastMap || lastMap[i][j] != map[i][j]) {
-                let chunk = await contract.getChunk({ x: i, y: j });
-                fullMap[i][j] = chunk;
-
-                updateChunk(i, j);
+            if (lastMap[i][j] != map[i][j]) {
+                chunksToUpdate.push({ i, j });
             }
         }
     }
+    await Promise.all(chunksToUpdate.map(async ({ i, j }) => {
+        fullMap[i][j] = await contract.getChunk({ x: i, y: j });
+        updateChunk(i, j);
+    }));
     lastMap = map;
 
     setTimeout(loadBoardAndDraw, 5000);
