@@ -1,6 +1,6 @@
-import { storage, context, u128 } from "near-sdk-as";
+import { storage, context, u128, logging } from "near-sdk-as";
 
-const CHUNK_SIZE = 16;
+export const CHUNK_SIZE = 16;
 export const CHUNK_COUNT = 4;
 const START_TILE_ID = "-1";
 
