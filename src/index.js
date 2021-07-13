@@ -52,13 +52,16 @@ async function logout() {
 const CHUNK_SIZE = 16;
 const CHUNK_COUNT = 4;
 const PARCEL_COUNT = 8;
-const PARCEL_SIZE_PIXELS = CHUNK_COUNT * CHUNK_SIZE * 32;
+const TILE_SIZE_PIXELS = 32;
+const CHUNK_SIZE_PIXELS = CHUNK_SIZE * TILE_SIZE_PIXELS;
+const PARCEL_SIZE_PIXELS = CHUNK_COUNT * CHUNK_SIZE_PIXELS;
 const WIDTH_TILES = CHUNK_COUNT * CHUNK_SIZE * PARCEL_COUNT;
 const HEIGHT_TILES = WIDTH_TILES;
 
-let lastMap = [...Array(PARCEL_COUNT)].map(() => [...Array(PARCEL_COUNT)]);
-let fullMap = [...Array(PARCEL_COUNT)].map(() => [...Array(PARCEL_COUNT)]);
-async function loadBoardAndDraw() {
+let nonceMap = [...Array(PARCEL_COUNT * CHUNK_COUNT)].map(() => [...Array(PARCEL_COUNT * CHUNK_COUNT)]);
+let fullMap = [...Array(PARCEL_COUNT * CHUNK_COUNT)].map(() => [...Array(PARCEL_COUNT * CHUNK_COUNT)]);
+
+async function loadParcels() {
     const { contract } = await connectPromise;
 
     const scene = game.scene.scenes[0];
@@ -67,40 +70,57 @@ async function loadBoardAndDraw() {
     const startY = Math.floor(scrollY / PARCEL_SIZE_PIXELS);
     const endX = Math.ceil((scrollX + displayWidth) / PARCEL_SIZE_PIXELS);
     const endY = Math.ceil((scrollY + displayHeight) / PARCEL_SIZE_PIXELS);
-    console.log('-', scrollX, scrollY, displayWidth, displayHeight, PARCEL_SIZE_PIXELS);
-    console.log('startX', startX, 'startY', startY, endX, endY);
 
-    const map = lastMap.map(row => [...row]);
     for (let parcelX = startX; parcelX < endX; parcelX++) {
         for (let parcelY = startY; parcelY < endY; parcelY++) {
-            console.log('x', parcelX, 'y', parcelY);
             const parcelNonces = await contract.getParcelNonces({ x: parcelX, y: parcelY });
-            const chunksToUpdate = [];
 
             for (let i = 0; i < parcelNonces.length; i++) {
                 for (let j = 0; j < parcelNonces[i].length; j++) {
-                    map[parcelX * CHUNK_COUNT + i][parcelY * CHUNK_COUNT + j] = parcelNonces[i][j];
+                    nonceMap[parcelX * CHUNK_COUNT + i][parcelY * CHUNK_COUNT + j] = parcelNonces[i][j];
                 }
             }
-            
-            for (let i = 0; i < map.length; i++) {
-                for (let j = 0; j < map[i].length; j++) {
-                    if (lastMap[i][j] != map[i][j]) {
-                        chunksToUpdate.push({ i, j });
-                    }
-                }
-            }
-            await Promise.all(chunksToUpdate.map(async ({ i, j }) => {
-                fullMap[i][j] = await contract.getChunk({ x: i, y: j });
-                updateChunk(i, j);
-            }));
+
+            // TODO: Move this to update() after resolving remaining nonce issues
+            loadChunksIfNeeded();
         }
     }
-    lastMap = map;
 
-
-    setTimeout(loadBoardAndDraw, 5000);
+    setTimeout(loadParcels, 5000);
 }
+
+async function loadChunksIfNeeded() {
+    const { contract } = await connectPromise;
+
+    const scene = game.scene.scenes[0];
+    const { scrollX, scrollY, displayWidth, displayHeight } = scene.cameras.main;
+    const startX = Math.floor(scrollX / CHUNK_SIZE_PIXELS);
+    const startY = Math.floor(scrollY / CHUNK_SIZE_PIXELS);
+    const endX = Math.ceil((scrollX + displayWidth) / CHUNK_SIZE_PIXELS);
+    const endY = Math.ceil((scrollY + displayHeight) / CHUNK_SIZE_PIXELS);
+    // TODO: Extend bounds a bit beyond screen
+
+    for (let i = startX; i < endX; i++) {
+        for (let j = startY; j < endY; j++) {
+            const { nonce, loading } = fullMap[i][j] || {};
+            if (nonce != nonceMap[i][j] && !loading) {
+                console.log('nonce',  nonce, nonceMap[i][j], loading);
+                fullMap[i][j] = { ...fullMap[i][j], loading: true };
+                // NOTE: no await on purpose
+                contract.getChunk({ x: i, y: j })
+                    .then(chunk => {
+                        fullMap[i][j] = { ...chunk, loading: false };
+                        updateChunk(i, j);
+                    })
+                    .catch(e => {
+                        console.warn('Error loading chunk ', i, j, e);
+                        fullMap[i][j] = { ...fullMap[i][j], loading: false };
+                    });
+            }
+        }
+    }
+}
+
 
 let setTileQueue = [];
 let setTileBatch = [];
@@ -299,7 +319,7 @@ class MyGame extends Phaser.Scene
 
         this.selectedTile = this.inventoryMap.getTileAt(5, 3);
 
-        loadBoardAndDraw().catch(console.error);
+        loadParcels().catch(console.error);
 
         // Debug graphics
         if (DEBUG) {
