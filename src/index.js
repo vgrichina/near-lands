@@ -61,44 +61,55 @@ const HEIGHT_TILES = WIDTH_TILES;
 let nonceMap = [...Array(PARCEL_COUNT * CHUNK_COUNT)].map(() => [...Array(PARCEL_COUNT * CHUNK_COUNT)]);
 let fullMap = [...Array(PARCEL_COUNT * CHUNK_COUNT)].map(() => [...Array(PARCEL_COUNT * CHUNK_COUNT)]);
 
+let parcelsLoading = false;
 async function loadParcels() {
-    const { contract } = await connectPromise;
-
-    const scene = game.scene.scenes[0];
-    const { scrollX, scrollY, displayWidth, displayHeight } = scene.cameras.main;
-    const startX = Math.floor(scrollX / PARCEL_SIZE_PIXELS);
-    const startY = Math.floor(scrollY / PARCEL_SIZE_PIXELS);
-    const endX = Math.ceil((scrollX + displayWidth) / PARCEL_SIZE_PIXELS);
-    const endY = Math.ceil((scrollY + displayHeight) / PARCEL_SIZE_PIXELS);
-
-    for (let parcelX = startX; parcelX < endX; parcelX++) {
-        for (let parcelY = startY; parcelY < endY; parcelY++) {
-            const parcelNonces = await contract.getParcelNonces({ x: parcelX, y: parcelY });
-
-            for (let i = 0; i < parcelNonces.length; i++) {
-                for (let j = 0; j < parcelNonces[i].length; j++) {
-                    nonceMap[parcelX * CHUNK_COUNT + i][parcelY * CHUNK_COUNT + j] = parcelNonces[i][j];
-                }
-            }
-
-            // TODO: Move this to update() after resolving remaining nonce issues
-            loadChunksIfNeeded();
-        }
+    if (parcelsLoading) {
+        return;
     }
 
-    setTimeout(loadParcels, 5000);
+    try {
+        parcelsLoading = true;
+        const { contract } = await connectPromise;
+
+        const scene = game.scene.scenes[0];
+        const { scrollX, scrollY, displayWidth, displayHeight } = scene.cameras.main;
+        const startX = Math.floor(scrollX / PARCEL_SIZE_PIXELS);
+        const startY = Math.floor(scrollY / PARCEL_SIZE_PIXELS);
+        const endX = Math.ceil((scrollX + displayWidth) / PARCEL_SIZE_PIXELS);
+        const endY = Math.ceil((scrollY + displayHeight) / PARCEL_SIZE_PIXELS);
+        // TODO: Load some out of bounds pre-emptively?
+
+        for (let parcelX = startX; parcelX < endX; parcelX++) {
+            for (let parcelY = startY; parcelY < endY; parcelY++) {
+                const parcelNonces = await contract.getParcelNonces({ x: parcelX, y: parcelY });
+
+                for (let i = 0; i < parcelNonces.length; i++) {
+                    for (let j = 0; j < parcelNonces[i].length; j++) {
+                        nonceMap[parcelX * CHUNK_COUNT + i][parcelY * CHUNK_COUNT + j] = parcelNonces[i][j];
+                    }
+                }
+            }
+        }
+
+        // Throttle
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+    } finally {
+        parcelsLoading = false;
+    }
 }
 
+
+// TODO: Move this to update() after resolving remaining nonce issues
 async function loadChunksIfNeeded() {
     const { contract } = await connectPromise;
 
     const scene = game.scene.scenes[0];
     const { scrollX, scrollY, displayWidth, displayHeight } = scene.cameras.main;
-    const startX = Math.floor(scrollX / CHUNK_SIZE_PIXELS);
-    const startY = Math.floor(scrollY / CHUNK_SIZE_PIXELS);
-    const endX = Math.ceil((scrollX + displayWidth) / CHUNK_SIZE_PIXELS);
-    const endY = Math.ceil((scrollY + displayHeight) / CHUNK_SIZE_PIXELS);
-    // TODO: Extend bounds a bit beyond screen
+    // TODO: 0.5 as constant, tune it
+    const startX = Math.max(0, Math.floor(scrollX / CHUNK_SIZE_PIXELS - 0.5));
+    const startY = Math.max(0, Math.floor(scrollY / CHUNK_SIZE_PIXELS - 0.5));
+    const endX = Math.min(PARCEL_COUNT * CHUNK_COUNT, Math.ceil((scrollX + displayWidth) / CHUNK_SIZE_PIXELS + 0.5));
+    const endY = Math.min(PARCEL_COUNT * CHUNK_COUNT, Math.ceil((scrollY + displayHeight) / CHUNK_SIZE_PIXELS + 0.5));
 
     for (let i = startX; i < endX; i++) {
         for (let j = startY; j < endY; j++) {
@@ -319,8 +330,6 @@ class MyGame extends Phaser.Scene
 
         this.selectedTile = this.inventoryMap.getTileAt(5, 3);
 
-        loadParcels().catch(console.error);
-
         // Debug graphics
         if (DEBUG) {
             // Turn on physics debugging to show player's hitbox
@@ -493,6 +502,9 @@ class MyGame extends Phaser.Scene
                 faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Color of colliding face edges
             });
         }
+
+        loadParcels().catch(console.error);
+        loadChunksIfNeeded().catch(console.error);
     }
 
     populateAutotile(startX, startY, width, height) {
