@@ -484,7 +484,7 @@ class MyGame extends Phaser.Scene
 
         let tilesetConfigs = [];
         for (let tileset of this.lpcTiles) {
-            const toGid = localId => (tileset.firstgid + localId).toString();
+            const toGid = localId => tileset.firstgid + localId;
 
             let coreTiles = [10, 15, 16, 17].map(toGid);
             let outerTiles = [
@@ -602,13 +602,14 @@ function updateChunk(i, j) {
     const chunk = fullMap[i][j];
     for (let ii = 0; ii < CHUNK_SIZE; ii++) {
         for (let jj = 0; jj < CHUNK_SIZE; jj++) {
-            scene.mainLayer.putTileAt(chunk.tiles[ii][jj], i * CHUNK_SIZE + ii, j * CHUNK_SIZE + jj);
+            scene.mainLayer.putTileAt(chunk.tiles[ii][jj] | 0, i * CHUNK_SIZE + ii, j * CHUNK_SIZE + jj);
         }
     }
 
     updatePutTileQueue();
 
     // Mark colliding tiles
+    scene.mainLayer.setCollisionBetween(-1, -1);
     scene.mainLayer.setCollisionBetween(45, 47);
     scene.mainLayer.setCollisionBetween(37, 39);
     scene.mainLayer.setCollisionBetween(30, 31);
