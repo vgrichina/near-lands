@@ -19,20 +19,7 @@ const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
 const SET_TILE_BATCH_SIZE = 10;
 const DEBUG = false;
 
-function $forEach(selector, fn) {
-    document.querySelectorAll(selector).forEach(fn);
-}
-
 const connectPromise = connectNear();
-connectPromise
-    .then(() => {
-        if (walletConnection.isSignedIn()) {
-            $forEach('.before-login', elem => elem.style.display = 'none');
-            $forEach('.user-name', elem => elem.innerHTML = walletConnection.getAccountId());
-        } else {
-            $forEach('.require-login', elem => elem.style.display = 'none');
-        }
-    });
 
 const accountIdToPlayer = {};
 async function login() {
@@ -115,7 +102,7 @@ async function loadChunksIfNeeded() {
         for (let j = startY; j < endY; j++) {
             const { nonce, loading } = fullMap[i][j] || {};
             if (nonce != nonceMap[i][j] && !loading) {
-                console.log('nonce',  nonce, nonceMap[i][j], loading);
+                console.debug('nonce mismatch for chunk', i, j, nonce, nonceMap[i][j], );
                 fullMap[i][j] = { ...fullMap[i][j], loading: true };
                 // NOTE: no await on purpose
                 contract.getChunk({ x: i, y: j })
@@ -309,6 +296,16 @@ class MyGame extends Phaser.Scene
         this.mainLayer = this.mainMap.createBlankLayer('Main', this.allTiles, 0, 0, WIDTH_TILES, HEIGHT_TILES);
         this.autotileLayer = this.mainMap.createBlankLayer('Main-autotile', this.allTiles, 0, 0, WIDTH_TILES, HEIGHT_TILES);
         this.mainMap.setLayer(this.mainLayer);
+
+        // Mark colliding tiles
+        const collides = true;
+        const recalculateFaces = false;
+        this.mainLayer.setCollisionBetween(-1, -1, collides, recalculateFaces);
+        this.mainLayer.setCollisionBetween(45, 47, collides, recalculateFaces);
+        this.mainLayer.setCollisionBetween(37, 39, collides, recalculateFaces);
+        this.mainLayer.setCollisionBetween(30, 31, collides, recalculateFaces);
+        this.mainLayer.setCollisionBetween(this.waterTiles.firstgid, this.waterTiles.firstgid + this.waterTiles.total, collides, recalculateFaces);
+        this.autotileLayer.setCollisionBetween(this.waterTiles.firstgid, this.waterTiles.firstgid + this.waterTiles.total, collides, recalculateFaces);
 
         this.cameras.main.setBounds(0, 0, this.mainMap.widthInPixels, this.mainMap.heightInPixels);
         this.physics.world.setBounds(0, 0, this.mainLayer.width, this.mainLayer.height, true, true, true, true);
@@ -508,6 +505,7 @@ class MyGame extends Phaser.Scene
     }
 
     populateAutotile(startX, startY, width, height) {
+        console.debug('populateAutotile', startX, startY, width, height);
         startX = Math.max(0, startX);
         startY = Math.max(0, startY);
 
@@ -640,16 +638,7 @@ function updateChunk(i, j) {
 
     updatePutTileQueue();
 
-    // Mark colliding tiles
-    scene.mainLayer.setCollisionBetween(-1, -1);
-    scene.mainLayer.setCollisionBetween(45, 47);
-    scene.mainLayer.setCollisionBetween(37, 39);
-    scene.mainLayer.setCollisionBetween(30, 31);
-    scene.mainLayer.setCollisionBetween(scene.waterTiles.firstgid, scene.waterTiles.firstgid + scene.waterTiles.total);
-
     scene.populateAutotile(i * CHUNK_SIZE - 1, j * CHUNK_SIZE - 1, CHUNK_SIZE + 2, CHUNK_SIZE + 2);
-
-    scene.autotileLayer.setCollisionBetween(scene.waterTiles.firstgid, scene.waterTiles.firstgid + scene.waterTiles.total);
 }
 
 function updatePutTileQueue() {
