@@ -27,11 +27,11 @@ export async function connectP2P({ accountId }) {
     // TODO: Signaling between peers via signalhub
 
     swarm.on('peer', (peer, id) => {
-        console.log('peer connected', peer, id);
+        console.debug('peer connected', peer, id);
         peers.push(peer);
 
         peer.on('close', () => {
-            console.log('close', peer);
+            console.debug('close', peer);
             const index = peers.indexOf(peer);
             if (index >= 0) {
                 peers.splice(index, 1);
@@ -41,9 +41,9 @@ export async function connectP2P({ accountId }) {
         });
 
         peer.on('data', data => {  
-            // console.log('data', peer, data);
+            // console.debug('data', peer, data);
             const message = JSON.parse(Buffer.from(data));
-            // console.log('message', message);
+            // console.debug('message', message);
 
             for (let locationListener of locationListeners) {
                 locationListener(message);
@@ -52,7 +52,7 @@ export async function connectP2P({ accountId }) {
     });
 
     function send(message) {
-        // console.log('send', message);
+        // console.debug('send', message);
         for (let peer of peers) {
             peer.send(JSON.stringify(message));
         }
@@ -64,7 +64,7 @@ export async function connectP2P({ accountId }) {
             locationListeners.push(locationListener);
         },
         publishLocation(locationData) {
-            // console.log('publishLocation');
+            // console.debug('publishLocation');
             send({ accountId, ...locationData });
         }
     }

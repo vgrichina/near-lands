@@ -64,7 +64,6 @@ async function loadParcels() {
         const startY = Math.floor(scrollY / PARCEL_SIZE_PIXELS);
         const endX = Math.ceil((scrollX + displayWidth) / PARCEL_SIZE_PIXELS);
         const endY = Math.ceil((scrollY + displayHeight) / PARCEL_SIZE_PIXELS);
-        // TODO: Load some out of bounds pre-emptively?
 
         for (let parcelX = startX; parcelX < endX; parcelX++) {
             for (let parcelY = startY; parcelY < endY; parcelY++) {
@@ -86,7 +85,6 @@ async function loadParcels() {
 }
 
 
-// TODO: Move this to update() after resolving remaining nonce issues
 async function loadChunksIfNeeded() {
     const { contract } = await connectPromise;
 
@@ -127,7 +125,7 @@ function putTileOnChain(x, y, tileId) {
         return;
     }
 
-    console.log('putTileOnChain', x, y, tileId);
+    console.debug('putTileOnChain', x, y, tileId);
     setTileQueue.push({ x, y, tileId });
     updatePending();
 }
@@ -149,7 +147,7 @@ function updatePending() {
 }
 
 function updateError(e) {
-    console.log('updateError', e);
+    console.warn('updateError', e);
 
     const scene = game.scene.scenes[0];
     if (!scene) {
@@ -193,7 +191,7 @@ async function setNextPixel() {
             setTileBatch = setTileBatch.slice(0, nextChunkIndex);
         }
 
-        console.log('setTiles', setTileBatch);
+        console.debug('setTiles', setTileBatch);
         await contract.setTiles({ tiles: setTileBatch }, SET_TILE_GAS);
     } catch (e) {
         updateError(e);
@@ -626,7 +624,7 @@ const config = {
 const game = new Phaser.Game(config);
 
 function updateChunk(i, j) {
-    console.log('updateChunk', i, j);
+    console.debug('updateChunk', i, j);
     const scene = game.scene.scenes[0];
 
     const chunk = fullMap[i][j];
