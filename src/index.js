@@ -84,22 +84,27 @@ async function loadParcels() {
     }
 }
 
-
+const CHUNK_PRELOAD_RATIO = 0.25;
+const VELOCITY_RATIO = 1 / 250;
 async function loadChunksIfNeeded() {
     const { contract } = await connectPromise;
 
     const scene = game.scene.scenes[0];
     const { scrollX, scrollY, displayWidth, displayHeight } = scene.cameras.main;
-    // TODO: 0.5 as constant, tune it
-    const startX = Math.max(0, Math.floor(scrollX / CHUNK_SIZE_PIXELS - 0.5));
-    const startY = Math.max(0, Math.floor(scrollY / CHUNK_SIZE_PIXELS - 0.5));
-    const endX = Math.min(PARCEL_COUNT * CHUNK_COUNT, Math.ceil((scrollX + displayWidth) / CHUNK_SIZE_PIXELS + 0.5));
-    const endY = Math.min(PARCEL_COUNT * CHUNK_COUNT, Math.ceil((scrollY + displayHeight) / CHUNK_SIZE_PIXELS + 0.5));
+
+    const extendStartX = Math.max(0, -scene.player.body.velocity.x * CHUNK_PRELOAD_RATIO * VELOCITY_RATIO);
+    const extendStartY = Math.max(0, -scene.player.body.velocity.y * CHUNK_PRELOAD_RATIO * VELOCITY_RATIO);
+    const extendEndX = Math.min(scene.player.body.velocity.x * CHUNK_PRELOAD_RATIO * VELOCITY_RATIO, CHUNK_PRELOAD_RATIO);
+    const extendEndY = Math.min(scene.player.body.velocity.y * CHUNK_PRELOAD_RATIO * VELOCITY_RATIO, CHUNK_PRELOAD_RATIO);
+    const startX = Math.max(0, Math.floor(scrollX / CHUNK_SIZE_PIXELS - extendStartX));
+    const startY = Math.max(0, Math.floor(scrollY / CHUNK_SIZE_PIXELS - extendStartY));
+    const endX = Math.min(PARCEL_COUNT * CHUNK_COUNT, Math.ceil((scrollX + displayWidth) / CHUNK_SIZE_PIXELS + extendEndX));
+    const endY = Math.min(PARCEL_COUNT * CHUNK_COUNT, Math.ceil((scrollY + displayHeight) / CHUNK_SIZE_PIXELS + extendEndY));
 
     for (let i = startX; i < endX; i++) {
         for (let j = startY; j < endY; j++) {
             const { nonce, loading } = fullMap[i][j] || {};
-            if (nonce != nonceMap[i][j] && !loading) {
+            if ((!nonce || nonce < nonceMap[i][j]) && !loading) {
                 console.debug('nonce mismatch for chunk', i, j, nonce, nonceMap[i][j], );
                 fullMap[i][j] = { ...fullMap[i][j], loading: true };
                 // NOTE: no await on purpose
