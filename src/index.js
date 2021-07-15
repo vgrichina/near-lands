@@ -12,6 +12,7 @@ import VirtualJoystick from 'phaser3-rex-plugins/plugins/virtualjoystick-plugin'
 
 import { connectP2P } from './p2p'
 import { connectNear, CONTRACT_NAME } from './near'
+import { debounce } from './utils';
 
 import { Player, UPDATE_DELTA } from './player'
 
@@ -514,11 +515,13 @@ class MyGame extends Phaser.Scene
         this.updateURL();
     }
 
-    updateURL() {
+    updateURL = debounce(() => {
         const x = this.player.x / TILE_SIZE_PIXELS;
         const y = this.player.y / TILE_SIZE_PIXELS;
-        window.location.hash = `${x.toFixed(1)},${y.toFixed(1)}`;
-    }
+        const newHash = `${x.toFixed(1)},${y.toFixed(1)}`;
+
+        window.location.hash = newHash;
+    }, 1000);
 
     populateAutotile(startX, startY, width, height) {
         console.debug('populateAutotile', startX, startY, width, height);
