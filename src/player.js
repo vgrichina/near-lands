@@ -40,6 +40,18 @@ function randomLayers() {
         female: [
             'dress_female/dress_w_sash_female',
             'dress_female/underdress',
+            'shirts/sleeveless/female/brown_pirate',
+            'shirts/sleeveless/female/brown_sleeveless',
+            'shirts/sleeveless/female/maroon_pirate',
+            'shirts/sleeveless/female/maroon_sleeveless',
+            'shirts/sleeveless/female/teal_pirate',
+            'shirts/sleeveless/female/teal_sleeveless',
+            'shirts/sleeveless/female/white_pirate',
+            'shirts/sleeveless/female/white_sleeveless',
+            'tunics/female/brown_tunic',
+            'tunics/female/maroon_tunic',
+            'tunics/female/teal_tunic',
+            'tunics/female/white_tunic',
         ],
         male: [
             'shirts/longsleeve/male/brown_longsleeve',
@@ -48,14 +60,38 @@ function randomLayers() {
             'shirts/longsleeve/male/white_longsleeve',
         ]
     };
-    const PANTS = {
+    const LEGS = {
+        female: [
+            'pants/female/magenta_pants_female',
+            'pants/female/red_pants_female',
+            'pants/female/teal_pants_female',
+            'pants/female/white_pants_female',
+            'skirt/female/robe_skirt_female_incomplete',
+        ],
         male: [
-            'magenta_pants_male',
-            'red_pants_male',
-            'teal_pants_male',
-            'white_pants_male'
+            'pants/male/magenta_pants_male',
+            'pants/male/red_pants_male',
+            'pants/male/teal_pants_male',
+            'pants/male/white_pants_male',
+            'skirt/male/robe_skirt_male',
         ]
-    }
+    };
+    const FEET = {
+        female: [
+            'shoes/female/black_shoes_female',
+            'shoes/female/brown_shoes_female',
+            'shoes/female/maroon_shoes_female',
+            'slippers_female/black',
+            'slippers_female/brown',
+            'slippers_female/gray',
+            'slippers_female/white',
+        ],
+        male: [
+            'shoes/male/black_shoes_male',
+            'shoes/male/brown_shoes_male',
+            'shoes/male/maroon_shoes_male',
+        ]
+    };
 
     const selectRandom = (items) => items[Math.floor(Math.random() * items.length)];
 
@@ -64,17 +100,19 @@ function randomLayers() {
     const haircut = selectRandom(HAIRCUT);
     const hairColor = selectRandom(HAIR_COLOR);
     const torso = selectRandom(TORSO[bodyType]);
+    const feet = selectRandom(FEET[bodyType]);
 
-    const needsPants = !torso.includes('dress');
-    const pants = needsPants && selectRandom(PANTS[bodyType]);
+    const needsLegsCover = !torso.includes('dress');
+    const legs = needsLegsCover && selectRandom(LEGS[bodyType]);
 
     const layers = [
         `body/${bodyType}/${skinColor}`,
         `hair/${bodyType}/${haircut}/${hairColor}`,
         `torso/${torso}`,
+        `feet/${feet}`,
     ]
-    if (needsPants) {
-        layers.push(`legs/pants/${bodyType}/${pants}`);
+    if (needsLegsCover) {
+        layers.push(`legs/${legs}`);
     }
 
     return layers.map(layer => `/lpc-character/${layer}.png`);
