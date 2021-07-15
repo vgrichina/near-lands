@@ -321,7 +321,12 @@ class MyGame extends Phaser.Scene
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
         ]
 
-        this.player = this.add.player({ scene: this, x: 400, y: 300, accountId: account.accountId, controlledByUser: true });
+        let x = 400, y = 300;
+        const { hash } = window.location; 
+        if (hash) {
+            [x, y] = hash.substring(1).split(',').map(s => parseFloat(s) * TILE_SIZE_PIXELS);
+        }
+        this.player = this.add.player({ scene: this, x, y, accountId: account.accountId, controlledByUser: true });
 
         const roundPixels = true;
         this.cameras.main.startFollow(this.player, roundPixels);
@@ -505,6 +510,14 @@ class MyGame extends Phaser.Scene
 
         loadParcels().catch(console.error);
         loadChunksIfNeeded().catch(console.error);
+
+        this.updateURL();
+    }
+
+    updateURL() {
+        const x = this.player.x / TILE_SIZE_PIXELS;
+        const y = this.player.y / TILE_SIZE_PIXELS;
+        window.location.hash = `${x.toFixed(1)},${y.toFixed(1)}`;
     }
 
     populateAutotile(startX, startY, width, height) {
