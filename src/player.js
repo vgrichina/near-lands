@@ -287,15 +287,17 @@ export class Player extends Phaser.GameObjects.Container {
             return;
         }        
 
+        const uiScene = this.scene.scene.get('UIScene');
+
         // Stop any previous movement from the last frame
         const prevVelocity = this.body.velocity.clone();
         this.body.setVelocity(0);
 
         const speed = 500 * PLAYER_SPEED;
 
-        if (this.scene.joystick) {
-            this.body.setVelocityX(this.scene.joystick.forceX / this.scene.joystick.radius * speed);
-            this.body.setVelocityY(this.scene.joystick.forceY / this.scene.joystick.radius * speed);
+        if (uiScene.joystick) {
+            this.body.setVelocityX(uiScene.joystick.forceX / uiScene.joystick.radius * speed);
+            this.body.setVelocityY(uiScene.joystick.forceY / uiScene.joystick.radius * speed);
         }
 
         if (this.scene.cursors.left.isDown) {
@@ -323,7 +325,7 @@ export class Player extends Phaser.GameObjects.Container {
             }
         }
 
-        if (!this.scene.joystick || this.scene.joystick.force > this.scene.joystick.radius) {
+        if (!uiScene.joystick || uiScene.joystick.force > uiScene.joystick.radius) {
             // Normalize and scale the velocity so that player can't move faster along a diagonal
             this.body.velocity.normalize().scale(speed);
         }
