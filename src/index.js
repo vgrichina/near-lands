@@ -518,10 +518,12 @@ class MyGame extends Phaser.Scene
     updateURL = debounce(() => {
         const x = this.player.x / TILE_SIZE_PIXELS;
         const y = this.player.y / TILE_SIZE_PIXELS;
-        const newHash = `${x.toFixed(1)},${y.toFixed(1)}`;
+        const newHash = `#${x.toFixed(1)},${y.toFixed(1)}`;
 
-        window.location.hash = newHash;
-    }, 1000);
+        if (this.player.body.velocity.length() == 0) {
+            history.replaceState(null, null, newHash);
+        }
+    }, 500);
 
     populateAutotile(startX, startY, width, height) {
         console.debug('populateAutotile', startX, startY, width, height);
