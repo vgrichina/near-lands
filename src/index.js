@@ -326,10 +326,6 @@ class GameScene extends Phaser.Scene
                 .setAlpha(0.75)
                 .setDepth(20);
         };
-
-        this.scale.on('resize', () => {
-            this.createOrUpdateUI();
-        });
     }
 
     update(time, delta) {

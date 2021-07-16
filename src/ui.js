@@ -8,6 +8,13 @@ export class UIScene extends Phaser.Scene {
     create() {
         this.input.addPointer(2);
 
+        this.createOrUpdateUI();
+        this.scale.on('resize', () => {
+            this.createOrUpdateUI();
+        });
+    }
+
+    createOrUpdateUI() {
         const { width, height } = this.cameras.main;
 
         if (this.logoutButton) {
