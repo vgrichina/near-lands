@@ -2,7 +2,7 @@ export function debounce(fn, timeout) {
     let lastExecutionTime;
     return function debounced() {
         if (lastExecutionTime && Date.now() - lastExecutionTime < timeout) {
-            setTimeout(debounced, Date.now() - lastExecutionTime);
+            setTimeout(debounced, timeout - (Date.now() - lastExecutionTime));
             return;
         }
 
