@@ -169,10 +169,10 @@ export class Player extends Phaser.GameObjects.Container {
             },
             // NOTE: Specifying height explicitly to avoid non-round pixels when combined with origin
             fixedHeight: 28,
-            // NOTE: Looks like Brave needs explicit line height
-            lineHeight: 28
+            metrics: { ascent: 15, descent: 4, fontSize: 19 }
         });
         nameText.setOrigin(0.5, 2.5);
+        console.log('name metrics', nameText.getTextMetrics());
 
         super(scene, x, y, [...playerSprites, nameText]);
         this.controlledByUser = controlledByUser;

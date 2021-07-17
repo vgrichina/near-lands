@@ -45,6 +45,7 @@ export class UIScene extends Phaser.Scene {
                 fontSize: '16px',
                 padding: { x: 10, y: 5 },
                 backgroundColor: '#000000',
+                metrics: { ascent: 13, descent: 4, fontSize: 17 }
             });
             this.loginButton.setScrollFactor(0);
             this.loginButton.setDepth(Number.MAX_VALUE);
@@ -64,6 +65,7 @@ export class UIScene extends Phaser.Scene {
             fontSize: '14px',
             padding: { x: 10, y: 5 },
             backgroundColor: '#000000',
+            metrics: { ascent: 12, descent: 4, fontSize: 16 }
         });
         this.messageLabel.setScrollFactor(0);
         this.messageLabel.setDepth(Number.MAX_VALUE);
@@ -83,8 +85,7 @@ export class UIScene extends Phaser.Scene {
                 padding: { x: 10, y: 5 },
                 backgroundColor: '#000000',
                 fill: '#ffffff',
-                // NOTE: Looks like Brave needs explicit line height
-                lineHeight: 28
+                metrics: { ascent: 12, descent: 4, fontSize: 16 }
             });
             this.help.setScrollFactor(0);
             this.help.setDepth(Number.MAX_VALUE);
