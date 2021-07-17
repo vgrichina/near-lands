@@ -30,6 +30,7 @@ export class UIScene extends Phaser.Scene {
                 fontSize: '16px',
                 padding: { x: 10, y: 5 },
                 backgroundColor: '#000000',
+                metrics: { ascent: 13, descent: 4, fontSize: 17 }
             });
             this.logoutButton.setScrollFactor(0);
             this.logoutButton.setDepth(Number.MAX_VALUE);
