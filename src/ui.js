@@ -74,8 +74,27 @@ export class UIScene extends Phaser.Scene {
         this.messageLabel.x = Math.floor((width - this.messageLabel.width) / 2);
         this.messageLabel.y = height - 10 - this.messageLabel.height;
 
-        const isTouchDevice = navigator.maxTouchPoints > 0;
+        if (this.modeButtons) {
+            this.modeButtons.destroy();
+        }
+        this.modeButtons = this.rexUI.add.buttons({
+            orientation: 'x',
+            buttons: [
+                this.createButton('Walk', 'walk'),
+                this.createButton('Build', 'build')
+            ],
+            type: 'radio',
+            setValueCallback: (button, value) => {
+                button
+                    .setAlpha(value ? 0.75 : 0.5);
+            },
+            space: { item: 8 }
+        }).layout();
+        this.modeButtons.value = 'walk';
+        this.modeButtons.x = Math.floor(width / 2);
+        this.modeButtons.y = 30;
 
+        const isTouchDevice = navigator.maxTouchPoints > 0;
         if (!isTouchDevice) {
             if (this.help) {
                 this.help.destroy();
@@ -117,6 +136,17 @@ export class UIScene extends Phaser.Scene {
         this.input.on('gameobjectout', () => gameScene.marker.visible = true);
         this.input.on('gameobjectover', () => gameScene.marker.visible = false);
     }
+
+    createButton(text, name) {
+        const button = this.add.text(0, 0, text, {
+            fontSize: '16px',
+            padding: { x: 10, y: 5 },
+            backgroundColor: '#000000',
+            metrics: { ascent: 13, descent: 4, fontSize: 17 }
+        });
+        button.name = name;
+        button.setAlpha(0.75);
+        return button;
     }
 
     update() {

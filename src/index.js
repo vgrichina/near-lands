@@ -9,6 +9,7 @@ import princessSpritesheet from 'url:~src/assets/princess.png'
 import 'regenerator-runtime/runtime';
 
 import VirtualJoystick from 'phaser3-rex-plugins/plugins/virtualjoystick-plugin'
+import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin'
 
 import { connectP2P } from './p2p'
 import { connectNear, CONTRACT_NAME } from './near'
@@ -309,7 +310,7 @@ class GameScene extends Phaser.Scene
         ]
 
         let x = 400, y = 300;
-        const { hash } = window.location; 
+        const { hash } = window.location;
         if (hash) {
             [x, y] = hash.substring(1).split(',').map(s => parseFloat(s) * TILE_SIZE_PIXELS);
         }
@@ -368,7 +369,32 @@ class GameScene extends Phaser.Scene
         }
     }
 
+    get gameMode() {
+        const uiScene = game.scene.getScene('UIScene');
+        const mode = uiScene.modeButtons.value;
+        return mode;
+    }
+
     update(time, delta) {
+        switch (this.gameMode) {
+        case 'walk':
+            this.inventoryLayer.visible = false;
+            this.inventoryBorder.visible = false;
+            this.marker.visible = false;
+            this.inventoryLayer.removeInteractive();
+            this.mainLayer.removeInteractive();
+            break;
+        case 'build':
+            this.inventoryLayer.visible = true;
+            this.inventoryBorder.visible = true;
+            this.marker.visible = false;
+            this.inventoryLayer.setInteractive();
+            this.mainLayer.setInteractive();
+            break;
+        default:
+            console.error('Unrecognized game mode: ', this.gameMode);
+        }
+
         this.inventoryKeys.forEach((key, i) => {
             if (Phaser.Input.Keyboard.JustDown(key)) {
                 this.createInventory(this.allTiles[i]);
@@ -513,6 +539,11 @@ const config = {
             key: 'rexVirtualJoystick',
             plugin: VirtualJoystick,
             start: true
+        }],
+        scene: [{
+            key: 'rexUI',
+            plugin: UIPlugin,
+            mapping: 'rexUI'
         }]
     },
     physics: {
