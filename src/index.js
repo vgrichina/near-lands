@@ -387,7 +387,6 @@ class GameScene extends Phaser.Scene
         case 'build':
             this.inventoryLayer.visible = true;
             this.inventoryBorder.visible = true;
-            this.marker.visible = false;
             this.inventoryLayer.setInteractive();
             this.mainLayer.setInteractive();
             break;
