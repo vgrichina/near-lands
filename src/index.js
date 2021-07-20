@@ -60,7 +60,7 @@ async function loadParcels() {
         parcelsLoading = true;
         const { contract } = await connectPromise;
 
-        const scene = game.scene.scenes[0];
+        const scene = game.scene.getScene('GameScene');
         const { scrollX, scrollY, displayWidth, displayHeight } = scene.cameras.main;
         const startX = Math.floor(scrollX / PARCEL_SIZE_PIXELS);
         const startY = Math.floor(scrollY / PARCEL_SIZE_PIXELS);
@@ -91,7 +91,7 @@ const VELOCITY_RATIO = 1 / 250;
 async function loadChunksIfNeeded() {
     const { contract } = await connectPromise;
 
-    const scene = game.scene.scenes[0];
+    const scene = game.scene.getScene('GameScene');
     const { scrollX, scrollY, displayWidth, displayHeight } = scene.cameras.main;
 
     const extendStartX = Math.max(0, -scene.player.body.velocity.x * CHUNK_PRELOAD_RATIO * VELOCITY_RATIO);
@@ -138,7 +138,7 @@ function putTileOnChain(x, y, tileId) {
 }
 
 function updatePending() {
-    const scene = game.scene.scenes[1]; // UIScene
+    const scene = game.scene.getScene('UIScene');
 
     if (!scene || !scene.messageLabel) {
         return;
@@ -150,7 +150,7 @@ function updatePending() {
 function updateError(e) {
     console.warn('updateError', e);
 
-    const scene = game.scene.scenes[1]; // UIScene
+    const scene = game.scene.getScene('UIScene');
     if (!scene) {
         return;
     }
@@ -250,6 +250,9 @@ class GameScene extends Phaser.Scene
         this.inventoryLayer = this.inventoryMap.createLayer(0, tiles, inventoryX, inventoryY);
         this.inventoryLayer.setScrollFactor(0);
         this.inventoryLayer.setDepth(UI_DEPTH);
+        this.inventoryLayer.setInteractive();
+        this.inventoryLayer.on('pointerdown', this.handleTileDrawing);
+        this.inventoryLayer.on('pointermove', this.handleTileDrawing);
 
         this.inventoryBorder = this.add.graphics();
         this.inventoryBorder.lineStyle(2, 0x000000, 1);
@@ -278,6 +281,9 @@ class GameScene extends Phaser.Scene
         this.lpcTiles = [this.grassTiles, this.waterTiles];
 
         this.mainLayer = this.mainMap.createBlankLayer('Main', this.allTiles, 0, 0, WIDTH_TILES, HEIGHT_TILES);
+        this.mainLayer.setInteractive();
+        this.mainLayer.on('pointerdown', this.handleTileDrawing);
+        this.mainLayer.on('pointermove', this.handleTileDrawing);
         this.autotileLayer = this.mainMap.createBlankLayer('Main-autotile', this.allTiles, 0, 0, WIDTH_TILES, HEIGHT_TILES);
         this.mainMap.setLayer(this.mainLayer);
 
@@ -328,8 +334,8 @@ class GameScene extends Phaser.Scene
         };
     }
 
-    update(time, delta) {
-        var worldPoint = this.input.activePointer.positionToCamera(this.cameras.main);
+    handleTileDrawing = (pointer) => {
+        let worldPoint = pointer.positionToCamera(this.cameras.main);
 
         let inventoryX = this.inventoryMap.worldToTileX(worldPoint.x);
         let inventoryY = this.inventoryMap.worldToTileY(worldPoint.y);
@@ -341,21 +347,12 @@ class GameScene extends Phaser.Scene
         let pointerTileX = sourceMap.worldToTileX(worldPoint.x);
         let pointerTileY = sourceMap.worldToTileY(worldPoint.y);
 
-        const uiScene = this.scene.get('UIScene');
-        const uiElements = [uiScene.loginButton, uiScene.logoutButton, uiScene.joystick?.base].filter(elem => !!elem);
-        const insideUI = uiElements.some(elem =>
-            Phaser.Geom.Rectangle.ContainsPoint(
-                Phaser.Geom.Rectangle.Inflate(elem.getBounds(), 10, 10), this.input.activePointer.position));
-
-
         this.marker.x = sourceMap.tileToWorldX(pointerTileX);
         this.marker.y = sourceMap.tileToWorldY(pointerTileY);
         this.marker.setDepth(insideInventory ? UI_DEPTH + 1 : 0);
-        this.marker.visible = !insideUI;
 
-        if (this.input.manager.activePointer.isDown && !insideUI) {
+        if (pointer.isDown) {
             if (this.shiftKey.isDown || sourceMap == this.inventoryMap) {
-                // TODO: Select proper layer
                 this.selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
             } else if (sourceMap == this.mainMap) {
                 if (!walletConnection.isSignedIn()) {
@@ -369,7 +366,9 @@ class GameScene extends Phaser.Scene
                 putTileOnChain(pointerTileX, pointerTileY, `${this.selectedTile.index}`);
             }
         }
+    }
 
+    update(time, delta) {
         this.inventoryKeys.forEach((key, i) => {
             if (Phaser.Input.Keyboard.JustDown(key)) {
                 this.createInventory(this.allTiles[i]);
@@ -526,10 +525,9 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-
 function updateChunk(i, j) {
     console.debug('updateChunk', i, j);
-    const scene = game.scene.scenes[0];
+    const scene = game.scene.getScene('GameScene');
 
     const chunk = fullMap[i][j];
     for (let ii = 0; ii < CHUNK_SIZE; ii++) {
@@ -544,7 +542,7 @@ function updateChunk(i, j) {
 }
 
 function updatePutTileQueue() {
-    const scene = game.scene.scenes[0];
+    const scene = game.scene.getScene('GameScene');
 
     for (let { x, y, tileId } of [...setTileBatch, ...setTileQueue]) {
         scene.mainLayer.putTileAt(tileId, x, y);
@@ -557,7 +555,7 @@ async function onLocationUpdate({ accountId, x, y, frame, animName, animProgress
     }
 
     if (!accountIdToPlayer[accountId]) {
-        const scene = game.scene.scenes[0];
+        const scene = game.scene.getScene('GameScene');
         accountIdToPlayer[accountId] = scene.add.player({ scene, x, y, accountId, layers });
     }
     const player = accountIdToPlayer[accountId];
@@ -580,7 +578,7 @@ async function publishLocation() {
             return;
         }
 
-        const scene = game.scene.scenes[0];
+        const scene = game.scene.getScene('GameScene');
         if (!scene || !scene.player) {
             return;
         }

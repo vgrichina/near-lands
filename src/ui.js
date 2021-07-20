@@ -105,8 +105,18 @@ export class UIScene extends Phaser.Scene {
             }
             this.joystick.x = this.joystick.base.width / 2 + 10;
             this.joystick.y = height - this.joystick.base.height / 2 - 10;
+            this.joystick.base.removeInteractive();
+            this.joystick.base.setInteractive({
+                hitArea: new Phaser.Geom.Circle(this.joystick.base.displayOriginX, this.joystick.base.displayOriginY, 150),
+                hitAreaCallback: Phaser.Geom.Circle.Contains,
+            });
             window.joystick = this.joystick;
         }
+
+        const gameScene = this.scene.get('GameScene');
+        this.input.on('gameobjectout', () => gameScene.marker.visible = true);
+        this.input.on('gameobjectover', () => gameScene.marker.visible = false);
+    }
     }
 
     update() {
