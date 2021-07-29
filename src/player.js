@@ -300,14 +300,14 @@ export class Player extends Phaser.GameObjects.Container {
             this.body.setVelocityY(uiScene.joystick.forceY / uiScene.joystick.radius * speed);
         }
 
-        if (this.scene.cursors.left.isDown) {
+        if (this.scene.cursors.left.isDown || this.scene.wasdCursors.left.isDown) {
             this.body.setVelocityX(-speed);
-        } else if (this.scene.cursors.right.isDown) {
+        } else if (this.scene.cursors.right.isDown || this.scene.wasdCursors.right.isDown) {
             this.body.setVelocityX(speed);
         }
-        if (this.scene.cursors.up.isDown) {
+        if (this.scene.cursors.up.isDown || this.scene.wasdCursors.up.isDown) {
             this.body.setVelocityY(-speed);
-        } else if (this.scene.cursors.down.isDown) {
+        } else if (this.scene.cursors.down.isDown || this.scene.wasdCursors.down.isDown) {
             this.body.setVelocityY(speed);
         }
 

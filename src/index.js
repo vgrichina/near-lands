@@ -302,6 +302,12 @@ class GameScene extends Phaser.Scene
         this.physics.world.setBounds(0, 0, this.mainLayer.width, this.mainLayer.height, true, true, true, true);
 
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.wasdCursors = this.input.keyboard.addKeys({
+            up: Phaser.Input.Keyboard.KeyCodes.W,
+            down: Phaser.Input.Keyboard.KeyCodes.S,
+            left: Phaser.Input.Keyboard.KeyCodes.A,
+            right: Phaser.Input.Keyboard.KeyCodes.D
+        });
         this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
         this.inventoryKeys = [
             this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
