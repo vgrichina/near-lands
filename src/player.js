@@ -107,9 +107,9 @@ function randomLayers() {
 
     const layers = [
         `body/${bodyType}/${skinColor}`,
-        `torso/${torso}`,
         `hair/${bodyType}/${haircut}/${hairColor}`,
         `feet/${feet}`,
+        `torso/${torso}`,
     ]
     if (needsLegsCover) {
         layers.push(`legs/${legs}`);
