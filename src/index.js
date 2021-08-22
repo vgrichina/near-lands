@@ -14,6 +14,7 @@ import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin'
 import { connectP2P } from './p2p'
 import { connectNear, CONTRACT_NAME } from './near'
 import { debounce } from './utils';
+import { loginWithNEAR } from './choose-wallet';
 
 import { Player, UPDATE_DELTA } from './player'
 import { UIScene } from './ui';
@@ -28,7 +29,8 @@ const accountIdToPlayer = {};
 async function login() {
     const { walletConnection } = await connectPromise;
 
-    walletConnection.requestSignIn(CONTRACT_NAME);
+    // walletConnection.requestSignIn(CONTRACT_NAME);
+    loginWithNEAR();
 }
 
 async function logout() {
@@ -103,6 +105,10 @@ async function loadChunksIfNeeded() {
     const startY = Math.max(0, Math.floor(scrollY / CHUNK_SIZE_PIXELS - extendStartY));
     const endX = Math.min(PARCEL_COUNT * CHUNK_COUNT, Math.ceil((scrollX + displayWidth) / CHUNK_SIZE_PIXELS + extendEndX));
     const endY = Math.min(PARCEL_COUNT * CHUNK_COUNT, Math.ceil((scrollY + displayHeight) / CHUNK_SIZE_PIXELS + extendEndY));
+    // const startX = 0;
+    // const startY = 0;
+    // const endX = PARCEL_COUNT * CHUNK_COUNT;
+    // const endY = PARCEL_COUNT * CHUNK_COUNT;
 
     for (let i = startX; i < endX; i++) {
         for (let j = startY; j < endY; j++) {
