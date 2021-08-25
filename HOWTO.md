@@ -1,10 +1,10 @@
-
+# How to use NEAR in a game
 
 ## How to login with NEAR
 
-```js
+Configure connection to NEAR blockchain:
 
-// Configure connection to NEAR blockchain
+```js
 const APP_KEY_PREFIX = 'near-lands:'
 const near = await connect({
     nodeUrl: 'https://rpc.mainnet.near.org',
@@ -13,9 +13,11 @@ const near = await connect({
     // Specify where to store the signing keys
     keyStore: new keyStores.BrowserLocalStorageKeyStore(window.localStorage, APP_KEY_PREFIX)
 })
+```
 
+Get current user account:
 
-// Get current account
+```js
 const walletConnection = new WalletConnection(near, APP_KEY_PREFIX)
 let account;
 if (walletConnection.isSignedIn()) {
@@ -25,7 +27,6 @@ if (walletConnection.isSignedIn()) {
     // Contract account, normally only gonna work in read only mode
     account = new Account(near.connection, CONTRACT_NAME);
 }
-
 ```
 
 ## How to store game state on NEAR
@@ -57,12 +58,28 @@ export function resetCounter(): void {
 }
 ```
 
+Connect to smart contract client-side:
+
+```js
+const contract = new Contract(account, CONTRACT_NAME, {
+    viewMethods: ["getCounter"],
+    changeMethods: ["incrementCounter", "resetCounter"],
+    sender: account.accountId
+});
+```
+
 With such smart contract client code can submit transactions to manipulate counter, e.g.:
 
 ```js
-document.querySelector('#plus').addEventListener('click', ()=>{
+document.querySelector('#plus').addEventListener('click', () => {
   contract.incrementCounter({value}).then(updateUI);
 });
+```
+
+It's possible to retrive current counter value as well:
+
+```js
+const counterValue = await contract.getCounter();
 ```
 
 See full counter example here:
@@ -96,14 +113,10 @@ Another interesting game to study for performance optimizations is [Berry Club](
 
 You can direct users to pay directly to your `.near` account. It works like a charm if you just want to accept donations, etc.
 
-However it gets harder if you want to detect payment and allow to do smth else like give users corresponding number of in-game currency.
-So recommended way to accept payment is to use a smart contract. In this case smart contract can have logic which verifies sender, amount and other parameters and automatically updates state of user's account accordingly (e.g. sends user a NFT for sword they just purchased).
+However it gets harder if you want to detect payment and allow to do smth else like give users corresponding number of in-game currency. 
+You can use some blockchain indexer, e.g. https://github.com/near/near-indexer-for-explorer. Easiest way to use it would be to query one of [publicly available Postgres instances](https://github.com/near/near-indexer-for-explorer#shared-public-access).
 
-```js
-
-// TODO: Is it possible to do without indexer?
-
-```
+So the recommended way to accept payment is to use a smart contract. In this case your smart contract can have logic which verifies sender, amount and other parameters and automatically updates state of user's account accordingly (e.g. sends user a NFT for sword they just purchased).
 
 ### Accept payment in smart contract
 
@@ -115,8 +128,10 @@ Amount of NEAR tokens can be specified for every contract call like this:
 ```js
     contract.addMessage(
       { text: message.value },
+      // Maximum amount of gas allocated to operation, 30 * 10**12 is a good default
       BOATLOAD_OF_GAS,
-      Big(donation.value || '0').times(10 ** 24).toFixed()
+      // Amount is specified as an integer number of yoctoNEAR (i.e. 1 / 10**24 NEAR)
+      Big(donation.value || '0').times(Big(10).pow(24)).toFixed()
     ).then(() => {
         // ...
     });
@@ -127,103 +142,45 @@ In smart contract number of tokens attached is represented by [`storage.attached
 Smart contract can verify this balance and perform actions accordingly, e.g.:
 ```typescript
 
-// TODO: Check this code works
 export function purchaseItem(itemId: string): void {
-    const itemPrice = storage.get<u128>("itemPrice:" + itemId);
-    if (itemPrice) {
-        if (context.attachedDeposit >= itemPrice!) {
-            // Update owner for purchased item
-            storage.set("itemOwner:" + itemId, context.contractName);
-            // TODO: .delete?
-            storage.set("itemPrice:" + itemId, null);
-        }
-    }
+  const itemPrice = storage.get<u128>("itemPrice:" + itemId);
+  assert(itemPrice, `item ${itemId} is not listed for sale`);
+  assert(context.attachedDeposit >= itemPrice!, `item ${itemId} costs ${itemPrice!} which is more than attached ${context.attachedDeposit}`);
+  // Update owner for purchased item and remove it from sale
+  storage.set("itemOwner:" + itemId, context.contractName);
+  storage.delete("itemPrice:" + itemId);
 }
 ```
 
+## Recommended reading
+
+* App examples on https://examples.near.org
+* "Basics" section of NEAR docs, starting from https://docs.near.org/docs/concepts/account
+* Building smart contracts in AssemblyScript: https://docs.near.org/docs/develop/contracts/as/intro
+* Client-side API quick reference: https://docs.near.org/docs/api/naj-quick-reference
+* NEAR Lands source code: https://github.com/vgrichina/near-lands
+* Berry Club source code: https://github.com/evgenykuzyakov/berryclub
+
+
+# IN NEXT EPISODES...
+
+## How to check user has an NFT on NEAR
+
+### client-side
+
+### from a smart contract
+
+## How to transfer NFT on NEAR
+
 ## How to mint NFT on NEAR
+### Pluminite
+### Mintbase
+### Paras
 
-## When blockchain makes sense
+## What games can get most of blockchain?
 
-### Monetizing UGC (user generated content)
+## Game economy building blocks on NEAR
 
-Some games provide a way for users to create custom content:
- - maps
- - textures
- - characters
- - minigames
- - various mods affecting either rendering or gameplay
- 
-Quite often these don't come with any native way to monetize, so a lot of creative people who contribute to community don't get paid for it.
-Some games have provided such ability (e.g. Roblox). However there are some drawbacks:
- - revenue share system biased towards platform
- - no guarantee that system can work beyond one parent company
-Basically the system is still owned by one private company vs players themselves.
+## How to store game content in decentralized way
 
-With blockchain you can have everything owned by community and allow creators to get paid directly.
-
-Web2:
-    - Roblox
-    - Minecraft
-    - etc
-    
-Web3:
-    http://cryptovoxels.com/
-    http://sandbox.game/
-    https://decentraland.org
-
-NEAR:
-    - NEAR Lands
-    - Marble Place
-    - Shroom Kingdom
-
-### Permanent ownership of land / items / characters (i.e. NFT-like stuff)
-
-### Turn based (or semi-realtime) multiplayer with high stakes
-
-Note that this doesn't have to be turn based only in a classic sense (like e.g. chess). A minimum viable "turn" for blockchain game is a time it takes to produce one block and confirm a transaction, which in case of NEAR is around 1 second. So there are games like Berry Club where you can essentialy decide to make or not to make a turn at any given moment and it feels somewhat realtime. However everyone's turns are still going to be executed sequentially on blockchain.
-
-This can potentially work for a very diverse spectrum of games. A chess match between trusted friends which has some money on stake to make it more interesting. Or a massively multiplayer stategy game where players all around the world compete for scarce resources.
-
-Web2:
-    - EVE Online
-    - Online poker?
-    - etc
-
-Web3: 
-    - Dark Forest
-    - ???
-
-NEAR:
-    - Berry Club
-
-### Keep massively multiplayer world running forever (as long as players care)
-
-It's often a pleasure to play old 80s and 90s games as you can run them easily on various emulators. These games gonna stay with us forver.
-Unfortunately it's completely different with massively multiplayer online games. It's all over once publisher decides to shut down the servers. So a lot of culture from 2000s and 2010s games gonna be lost forever (at least in it's dynamic form), which is a shale.
-
-Decentralized tech allows you to build massively multiplayer worlds which can go on forever. Or at least until there are users who care and are willing to pay for compute.
-
-### Trading card games
-
-Web3:
-    - https://www.skyweaver.net/
-    - Neon District?
-    - ???
-
-### Governance games
-
-Web2:
-    - https://www.erepublik.com/en
-    - Wikipedia ;)
-    - ???
-
-You can imagine adopting some games into "play by DAO" mode, e.g. collective of multiple humans deciding chess moves playing against Kasparov
-
-### Provably unique experiences (e.g. dungeon crawler where you get one shot to go through given dungeon and your adventure is recorded as NFT)
-
-## How to run game economy on NEAR
-
-
-## How to build realtime p2p communication
-
+## How to build realtime P2P communication
