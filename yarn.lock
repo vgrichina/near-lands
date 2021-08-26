@@ -1629,6 +1629,11 @@ acorn@^6.0.1, acorn@^6.0.4:
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-6.4.2.tgz#35866fd710528e92de10cf06016498e47e39e1e6"
   integrity sha512-XtGIhXwF8YM8bJhGxG5kXgjkEuNGLTkoYqVE+KMR+aspr4KGYmKYg7yUe3KghyQ9yheNwLnjmzh/7+gfDBmHCQ==
 
+agora-rtc-sdk-ng@^4.6.3:
+  version "4.6.3"
+  resolved "https://registry.yarnpkg.com/agora-rtc-sdk-ng/-/agora-rtc-sdk-ng-4.6.3.tgz#ac90a6b705cee048ea4a0685d62a6b96a0fe9d27"
+  integrity sha512-/p+ZXhae1RnVVM4cXVZqnVCUhUrhtkccJdETxuJnhq49btaTLnkQSR9j4Xq9k5oRU4FqBxtgxwBNPzRgkFNGMA==
+
 ajv@^6.12.3:
   version "6.12.6"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.6.tgz#baf5a62e802b07d977034586f8c3baf5adf26df4"

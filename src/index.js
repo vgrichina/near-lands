@@ -13,6 +13,7 @@ import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin'
 
 import { connectP2P } from './p2p'
 import { connectNear, CONTRACT_NAME } from './near'
+import * as audioChat from './audio-chat'
 import { debounce } from './utils';
 
 import { Player, UPDATE_DELTA } from './player'
@@ -644,6 +645,9 @@ publishLocation();
         return;
     }
     p2p.subscribeToLocation(onLocationUpdate);
+
+    await audioChat.join();
+
 })().catch(console.error);
 
 Object.assign(window, { login, logout, game, onLocationUpdate, publishLocation });

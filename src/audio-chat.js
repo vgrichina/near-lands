@@ -1,3 +1,4 @@
+import * as AgoraRTC from 'agora-rtc-sdk-ng'
 
 /*
  *  Create an {@link https://docs.agora.io/en/Video/API%20Reference/web_ng/interfaces/iagorartcclient.html|AgoraRTCClient} instance.
@@ -17,7 +18,7 @@ var options = {
     appid: '09dc5426373f464086395bf30764b8ea',
     channel: 'near-lands',
     uid: null,
-    token: '00609dc5426373f464086395bf30764b8eaIADYZt7zxFMicQnuOK+lZVix45X00OTFhrsdWixbEaBbv8tanDQAAAAAEACLgpZhzpsoYQEAAQDOmyhh'
+    token: '00609dc5426373f464086395bf30764b8eaIAARv7POaGgRM0qTnIoGntgUjYAzDfNOcpracwqGlh3mpLSNWLMAAAAAEACLgpZhgqsoYQEAAQCCqyhh'
 };
 
 /*
@@ -30,17 +31,10 @@ export async function join() {
     client.on("user-unpublished", handleUserUnpublished);
 
     // Join a channel and create local tracks. Best practice is to use Promise.all and run them concurrently.
-    [options.uid, localTracks.audioTrack, localTracks.videoTrack] = await Promise.all([
-        // Join the channel.
+    [options.uid, localTracks.audioTrack] = await Promise.all([
         client.join(options.appid, options.channel, options.token || null, options.uid || null),
-        // Create tracks to the local microphone and camera.
         AgoraRTC.createMicrophoneAudioTrack(),
-        AgoraRTC.createCameraVideoTrack()
     ]);
-
-    // Play the local video track to the local browser and update the UI with the user ID.
-    localTracks.videoTrack.play("local-player");
-    $("#local-player-name").text(`localVideo(${options.uid})`);
 
     // Publish the local video and audio tracks to the channel.
     await client.publish(Object.values(localTracks));
@@ -50,7 +44,7 @@ export async function join() {
 /*
  * Stop all local and remote tracks then leave the channel.
  */
-async function leave() {
+export async function leave() {
     for (trackName in localTracks) {
         var track = localTracks[trackName];
         if (track) {
@@ -60,45 +54,23 @@ async function leave() {
         }
     }
 
-    // Remove remote users and player views.
     remoteUsers = {};
-    $("#remote-playerlist").html("");
 
-    // leave the channel
     await client.leave();
-
-    $("#local-player-name").text("");
-    $("#join").attr("disabled", false);
-    $("#leave").attr("disabled", true);
     console.log("client leaves channel success");
 }
-
 
 /*
  * Add the local use to a remote channel.
  *
  * @param  {IAgoraRTCRemoteUser} user - The {@link  https://docs.agora.io/en/Voice/API%20Reference/web_ng/interfaces/iagorartcremoteuser.html| remote user} to add.
- * @param {trackMediaType - The {@link https://docs.agora.io/en/Voice/API%20Reference/web_ng/interfaces/itrack.html#trackmediatype | media type} to add.
  */
-async function subscribe(user, mediaType) {
-    console.log(`subscribe: ${user} ${mediaType}`);
+async function subscribe(user) {
+    console.log('subscribe:', user);
     const uid = user.uid;
-    // subscribe to a remote user
-    await client.subscribe(user, mediaType);
+    await client.subscribe(user, 'audio');
     console.log("subscribe success");
-    if (mediaType === 'video') {
-        const player = $(`
-      <div id="player-wrapper-${uid}">
-        <p class="player-name">remoteUser(${uid})</p>
-        <div id="player-${uid}" class="player"></div>
-      </div>
-    `);
-        $("#remote-playerlist").append(player);
-        user.videoTrack.play(`player-${uid}`);
-    }
-    if (mediaType === 'audio') {
-        user.audioTrack.play();
-    }
+    user.audioTrack.play();
 }
 
 /*
@@ -121,5 +93,5 @@ function handleUserPublished(user, mediaType) {
 function handleUserUnpublished(user) {
     const id = user.uid;
     delete remoteUsers[id];
-    $(`#player-wrapper-${id}`).remove();
+    // user.audioTrack.stop(); ?
 }
