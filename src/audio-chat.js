@@ -1,5 +1,9 @@
 import * as AgoraRTC from 'agora-rtc-sdk-ng'
 
+const AGORA_TOKEN_SERVER_URL = process.env.AGORA_TOKEN_SERVER_URL || 'https://agora-token-server.onrender.com';
+const AGORA_CHANNEL = process.env.AGORA_CHANNEL || 'near-lands';
+const AGORA_APP_ID = process.env.AGORA_APP_ID || '09dc5426373f464086395bf30764b8ea';
+
 /*
  *  Create an {@link https://docs.agora.io/en/Video/API%20Reference/web_ng/interfaces/iagorartcclient.html|AgoraRTCClient} instance.
  *
@@ -15,11 +19,16 @@ var localTracks = {
 var remoteUsers = {};
 
 var options = {
-    appid: '09dc5426373f464086395bf30764b8ea',
-    channel: 'near-lands',
+    appid: AGORA_APP_ID,
+    channel: AGORA_CHANNEL,
     uid: null,
-    token: '00609dc5426373f464086395bf30764b8eaIAARv7POaGgRM0qTnIoGntgUjYAzDfNOcpracwqGlh3mpLSNWLMAAAAAEACLgpZhgqsoYQEAAQCCqyhh'
 };
+
+async function fetchToken() {
+    const res = await fetch(`${AGORA_TOKEN_SERVER_URL}/rtcToken?channelName=${encodeURIComponent(options.channel)}`);
+    const { key } = await res.json();
+    return key;
+}
 
 /*
  * Join a channel, then create local video and audio tracks and publish them to the channel.
@@ -29,6 +38,9 @@ export async function join() {
     // Add an event listener to play remote tracks when remote user publishes.
     client.on("user-published", handleUserPublished);
     client.on("user-unpublished", handleUserUnpublished);
+
+    // TODO: Cache token?
+    options.token = await fetchToken();
 
     // Join a channel and create local tracks. Best practice is to use Promise.all and run them concurrently.
     [options.uid, localTracks.audioTrack] = await Promise.all([
