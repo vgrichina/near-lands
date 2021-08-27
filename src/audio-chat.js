@@ -21,7 +21,6 @@ var remoteUsers = {};
 var options = {
     appid: AGORA_APP_ID,
     channel: AGORA_CHANNEL,
-    uid: null,
 };
 
 async function fetchToken() {
@@ -33,7 +32,7 @@ async function fetchToken() {
 /*
  * Join a channel, then create local video and audio tracks and publish them to the channel.
  */
-export async function join() {
+export async function join(accountId) {
 
     // Add an event listener to play remote tracks when remote user publishes.
     client.on("user-published", handleUserPublished);
@@ -44,7 +43,7 @@ export async function join() {
 
     // Join a channel and create local tracks. Best practice is to use Promise.all and run them concurrently.
     [options.uid, localTracks.audioTrack] = await Promise.all([
-        client.join(options.appid, options.channel, options.token || null, options.uid || null),
+        client.join(options.appid, options.channel, options.token || null, accountId),
         AgoraRTC.createMicrophoneAudioTrack(),
     ]);
 

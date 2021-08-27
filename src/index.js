@@ -646,8 +646,10 @@ publishLocation();
     }
     p2p.subscribeToLocation(onLocationUpdate);
 
-    await audioChat.join();
-
+    const { walletConnection } = await connectPromise;
+    if (walletConnection.isSignedIn()) {
+        await audioChat.join(walletConnection.getAccountId());
+    }
 })().catch(console.error);
 
 Object.assign(window, { login, logout, game, onLocationUpdate, publishLocation });
