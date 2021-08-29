@@ -70,6 +70,14 @@ export async function leave() {
     console.log("client leaves channel success");
 }
 
+export async function setVolume(accountId, volume) {
+    console.log('setVolume', accountId, volume);
+    const user = remoteUsers[accountId];
+    if (user) {
+        user.audioTrack.setVolume(volume);
+    }
+}
+
 /*
  * Add the local use to a remote channel.
  *
@@ -77,10 +85,11 @@ export async function leave() {
  */
 async function subscribe(user) {
     console.log('subscribe:', user);
-    const uid = user.uid;
     await client.subscribe(user, 'audio');
     console.log("subscribe success");
     user.audioTrack.play();
+    // NOTE: Volume will be updated using setVolume() function above
+    user.audioTrack.setVolume(0);
 }
 
 /*

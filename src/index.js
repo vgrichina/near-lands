@@ -425,7 +425,16 @@ class GameScene extends Phaser.Scene
         loadChunksIfNeeded().catch(console.error);
 
         this.updateURL();
+        this.updateVolume();
     }
+
+    updateVolume = debounce(() => {
+        for (let accountId of Object.keys(accountIdToPlayer)) {
+            const { x, y } = accountIdToPlayer[accountId];
+            const volume = Math.max(0, 1 - Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) / 500) * 1000;
+            audioChat.setVolume(accountId, volume);
+        }
+    }, 100);
 
     updateURL = debounce(() => {
         const x = this.player.x / TILE_SIZE_PIXELS;
