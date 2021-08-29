@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 
+import * as voiceChat from './audio-chat';
+
 export class UIScene extends Phaser.Scene {
     constructor() {
         super({ key: 'UIScene', active: true });
@@ -26,38 +28,34 @@ export class UIScene extends Phaser.Scene {
             this.loginButton = null;
         }
         if (walletConnection.isSignedIn()) {
-            this.logoutButton = this.add.text(0, 0, 'Logout', {
-                fontSize: '16px',
-                padding: { x: 10, y: 5 },
-                backgroundColor: '#000000',
-                metrics: { ascent: 13, descent: 4, fontSize: 17 }
-            });
+            this.logoutButton = this.createButton('Logout', 'logout');
             this.logoutButton.setScrollFactor(0);
             this.logoutButton.setDepth(Number.MAX_VALUE);
-            this.logoutButton.setAlpha(0.75);
-            this.logoutButton.setInteractive({ useHandCursor: true });
             this.logoutButton.on('pointerup', () => {
                 logout();
             });
             this.logoutButton.x = width - 10 - this.logoutButton.width;
             this.logoutButton.y = 10;
         } else {
-            this.loginButton = this.add.text(0, 0, 'Login with NEAR', {
-                fontSize: '16px',
-                padding: { x: 10, y: 5 },
-                backgroundColor: '#000000',
-                metrics: { ascent: 13, descent: 4, fontSize: 17 }
-            });
+            this.loginButton = this.createButton('Login with NEAR', 'login');
             this.loginButton.setScrollFactor(0);
             this.loginButton.setDepth(Number.MAX_VALUE);
-            this.loginButton.setAlpha(0.75);
-            this.loginButton.setInteractive({ useHandCursor: true });
             this.loginButton.on('pointerup', () => {
                 login();
             });
             this.loginButton.x = width - 10 - this.loginButton.width;
             this.loginButton.y = 10;
         }
+
+        if (this.voiceButton) {
+            this.voiceButton.destroy();
+        }
+        this.voiceButton = this.createButton('Start Voice', 'voice');
+        this.voiceButton.x = width - 10 - this.voiceButton.width;
+        this.voiceButton.y = height - 10 - this.voiceButton.height;
+        this.voiceButton.on('pointerup', () => {
+            voiceChat.startVoice();
+        });
 
         if (this.messageLabel) {
             this.messageLabel.destroy();
@@ -146,6 +144,7 @@ export class UIScene extends Phaser.Scene {
         });
         button.name = name;
         button.setAlpha(0.75);
+        button.setInteractive({ useHandCursor: true });
         return button;
     }
 
