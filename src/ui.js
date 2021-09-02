@@ -47,14 +47,20 @@ export class UIScene extends Phaser.Scene {
             this.loginButton.y = 10;
         }
 
-        if (this.voiceButton) {
-            this.voiceButton.destroy();
+        if (this.toggleMicButton) {
+            this.toggleMicButton.destroy();
         }
-        this.voiceButton = this.createButton('Start Voice', 'voice');
-        this.voiceButton.x = width - 10 - this.voiceButton.width;
-        this.voiceButton.y = height - 10 - this.voiceButton.height;
-        this.voiceButton.on('pointerup', () => {
-            voiceChat.startVoice();
+        const getToggleMicButtonText = () => !voiceChat.isMicEnabled() ? 'Start Voice' : 'Stop Voice';
+        this.toggleMicButton = this.createButton(getToggleMicButtonText(), 'unmute');
+        this.toggleMicButton.x = width - 10 - this.toggleMicButton.width;
+        this.toggleMicButton.y = height - 10 - this.toggleMicButton.height;
+        this.toggleMicButton.on('pointerup', async () => {
+            if (voiceChat.isMicEnabled()) {
+                await voiceChat.muteMic();
+            } else {
+                await voiceChat.unmuteMic();
+            }
+            this.toggleMicButton.text = getToggleMicButtonText();
         });
 
         if (this.messageLabel) {

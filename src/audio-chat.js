@@ -43,12 +43,25 @@ export async function join(accountId) {
     options.uid = await client.join(options.appid, options.channel, options.token || null, accountId);
 }
 
-export async function startVoice() {
-    localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+export function isMicEnabled() {
+    return localTracks.audioTrack?.enabled && !localTracks.audioTrack?.muted;
+}
 
-    // Publish the local video and audio tracks to the channel.
-    await client.publish(Object.values(localTracks));
-    console.log("publish success");
+export async function unmuteMic() {
+    if (!localTracks.audioTrack) {
+        localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+
+        // Publish the local video and audio tracks to the channel.
+        await client.publish(Object.values(localTracks));
+    } else {
+        await localTracks.audioTrack.setMuted(false);
+    }
+}
+
+export async function muteMic() {
+    if (localTracks.audioTrack) {
+        await localTracks.audioTrack.setMuted(true);
+    }
 }
 
 /*
