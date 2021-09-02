@@ -64,6 +64,28 @@ export async function muteMic() {
     }
 }
 
+let playbackEnabled = true;
+
+export function isPlaybackEnabled() {
+    // TODO: How best to handle partially muted (some users) vs fully muted state
+    const users = Object.values(remoteUsers);
+    return users.length ? users.every(user => user.audioTrack.isPlaying) : playbackEnabled;
+}
+
+export function startPlayback() {
+    playbackEnabled = true;
+    Object.values(remoteUsers).forEach(user => {
+        user.audioTrack.play();
+    });
+}
+
+export function stopPlayback() {
+    playbackEnabled = false;
+    Object.values(remoteUsers).forEach(user => {
+        user.audioTrack.stop();
+    });
+}
+
 /*
  * Stop all local and remote tracks then leave the channel.
  */
