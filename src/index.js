@@ -442,7 +442,9 @@ class GameScene extends Phaser.Scene
         const newHash = `#${x.toFixed(1)},${y.toFixed(1)}`;
 
         if (this.player.body.velocity.length() == 0) {
-            history.replaceState(null, null, newHash);
+            if (window.location.hash != newHash) {
+                history.replaceState(null, null, newHash);
+            }
         }
     }, 500);
 
