@@ -47,42 +47,50 @@ export class UIScene extends Phaser.Scene {
             this.loginButton.y = 10;
         }
 
+        const getToggleMicButtonText = () => !voiceChat.isMicEnabled() ? 'Start Voice' : 'Stop Voice';
+        const getToggleAudioButtonText = () => !voiceChat.isPlaybackEnabled() ? 'Unmute Audio' : 'Mute Audio';
+
+        const updateAudioChatButtons = () => {
+            this.toggleMicButton.text = getToggleMicButtonText();
+            this.toggleAudioButton.text = getToggleAudioButtonText();
+
+            this.toggleMicButton.x = width - 10 - this.toggleMicButton.width;
+            this.toggleMicButton.y = height - 10 - this.toggleMicButton.height;
+
+            this.toggleAudioButton.x = this.toggleMicButton.x - 10 - this.toggleAudioButton.width;
+            this.toggleAudioButton.y = height - 10 - this.toggleAudioButton.height;
+        };
+
         if (this.toggleMicButton) {
             this.toggleMicButton.destroy();
         }
-        const getToggleMicButtonText = () => !voiceChat.isMicEnabled() ? 'Start Voice' : 'Stop Voice';
         this.toggleMicButton = this.createButton(getToggleMicButtonText(), 'unmute');
-        this.toggleMicButton.x = width - 10 - this.toggleMicButton.width;
-        this.toggleMicButton.y = height - 10 - this.toggleMicButton.height;
         this.toggleMicButton.on('pointerup', async () => {
             if (voiceChat.isMicEnabled()) {
                 await voiceChat.muteMic();
             } else {
                 await voiceChat.unmuteMic();
             }
-            this.toggleMicButton.text = getToggleMicButtonText();
+            updateAudioChatButtons();
         });
 
         if (this.toggleAudioButton) {
             this.toggleAudioButton.destroy();
         }
-        const getToggleAudioButtonText = () => !voiceChat.isPlaybackEnabled() ? 'Unmute Audio' : 'Mute Audio';
         this.toggleAudioButton = this.createButton(getToggleAudioButtonText(), 'unmute');
-        this.toggleAudioButton.x = this.toggleMicButton.x - 10 - this.toggleAudioButton.width;
-        this.toggleAudioButton.y = height - 10 - this.toggleAudioButton.height;
         this.toggleAudioButton.on('pointerup', async () => {
             if (voiceChat.isPlaybackEnabled()) {
                 voiceChat.stopPlayback();
                 if (voiceChat.isMicEnabled()) {
-                    voiceChat.muteMic();
-                    this.toggleMicButton.text = getToggleMicButtonText();
+                    await voiceChat.muteMic();
                 }
             } else {
                 voiceChat.startPlayback();
             }
-            this.toggleAudioButton.text = getToggleAudioButtonText();
+            updateAudioChatButtons();
         });
 
+        updateAudioChatButtons();
 
         if (this.messageLabel) {
             this.messageLabel.destroy();
