@@ -69,7 +69,7 @@ let playbackEnabled = true;
 export function isPlaybackEnabled() {
     // TODO: How best to handle partially muted (some users) vs fully muted state
     const users = Object.values(remoteUsers);
-    return users.length ? users.every(user => user.audioTrack.isPlaying) : playbackEnabled;
+    return users.length ? users.every(user => user.audioTrack?.isPlaying) : playbackEnabled;
 }
 
 export function startPlayback() {
@@ -108,7 +108,7 @@ export async function leave() {
 export async function setVolume(accountId, volume) {
     console.log('setVolume', accountId, volume);
     const user = remoteUsers[accountId];
-    if (user) {
+    if (user?.audioTrack) {
         user.audioTrack.setVolume(volume);
     }
 }
