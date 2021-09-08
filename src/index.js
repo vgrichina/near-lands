@@ -614,7 +614,7 @@ let p2p
 async function connectP2PIfNeeded() {
     const { contract } = await connectPromise;
     if (!p2p) {
-        p2p = await connectP2P({ accountId: contract.account.accountId });
+        p2p = await connectP2P({ account: contract.account });
         window.p2p = p2p;
     }
 }
