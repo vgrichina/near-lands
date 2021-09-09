@@ -2,7 +2,7 @@ import * as signalhub from 'signalhub'
 import * as webrtcSwarm from 'webrtc-swarm'
 
 import nacl from 'tweetnacl';
-import { transactions } from 'near-api-js';
+import { transactions, utils } from 'near-api-js';
 import { serialize, deserialize } from 'borsh';
 import { PublicKey } from 'near-api-js/lib/utils';
 import { sha256 } from 'js-sha256'
@@ -10,7 +10,7 @@ import { sha256 } from 'js-sha256'
 const PUBLIC_KEY_BYTES = 1 + 32;
 const SIGNATURE_BYTES = PUBLIC_KEY_BYTES + 64;
 
-const cachedPublicKeys = {};
+const cachedHasMatchingKey = {};
 const lastSeenNonce = {};
 
 export async function connectP2P({ account }) {
@@ -26,19 +26,29 @@ export async function connectP2P({ account }) {
         // TODO: Tune options
     });
 
-    // TODO: Unhardcode this
-    if (accountId == 'lands.near') {
-        accountId = swarm.me;
+    function guestAccountIdFromPublicKey(publicKey) {
+        const pubKeySuffix = Buffer.from(publicKey.data).slice(16).toString('hex');
+        return `guest:${pubKeySuffix}`;
     }
 
-    // TODO: Generate special key for unauthenticated accounts?
+    // TODO: Unhardcode this
+    if (accountId == 'lands.near') {
+        accountId = localStorage.getItem('p2p:guest-account');
+        const { keyStore } = signer;
+        if (!accountId || !(await keyStore.getKey(networkId, accountId))) {
+            // Generate special key for unauthenticated accounts
+            const keyPair = utils.KeyPair.fromRandom('ed25519');
+            accountId = guestAccountIdFromPublicKey(keyPair.publicKey);
+            await keyStore.setKey(networkId, accountId, keyPair);
+            localStorage.setItem('p2p:guest-account', accountId)
+        }
+    }
+
 
     // TODO: Support channel subscriptions, route messages through peers?
 
     let locationListeners = [];
     let peers = [];
-
-    // TODO: Signaling between peers via signalhub
 
     swarm.on('peer', (peer, id) => {
         console.debug('peer connected', peer, id);
@@ -65,18 +75,22 @@ export async function connectP2P({ account }) {
             // console.debug('message', message);
 
             const keyId = `${message.accountId}::${publicKey.toString()}`;
-            let accessKey = cachedPublicKeys[keyId]
-            if (!accessKey) {
-                accessKey = await provider.query({
-                    request_type: 'view_access_key',
-                    account_id: message.accountId,
-                    public_key: publicKey.toString(),
-                    finality: 'optimistic'
-                });
-                cachedPublicKeys[keyId] = accessKey;
+            let hasMatchingKey = cachedHasMatchingKey[keyId];
+            if (!hasMatchingKey) {
+                if (message.accountId.startsWith('guest:')) {
+                    hasMatchingKey = (guestAccountIdFromPublicKey(publicKey) == message.accountId);
+                } else {
+                    hasMatchingKey = !!(await provider.query({
+                        request_type: 'view_access_key',
+                        account_id: message.accountId,
+                        public_key: publicKey.toString(),
+                        finality: 'optimistic'
+                    }));
+                }
+                cachedHasMatchingKey[keyId] = hasMatchingKey;
             }
 
-            if (!accessKey) {
+            if (!hasMatchingKey) {
                 console.warn('Cannot find public key info', keyId, 'for message', message);
                 return;
             }
