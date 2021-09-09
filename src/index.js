@@ -610,21 +610,18 @@ async function onLocationUpdate({ accountId, x, y, frame, animName, animProgress
     player.updateFromRemote({ x, y, layers, frame, animName, animProgress });
 }
 
-let p2p
+let p2pPromise
 async function connectP2PIfNeeded() {
     const { contract } = await connectPromise;
-    if (!p2p) {
-        p2p = await connectP2P({ account: contract.account });
-        window.p2p = p2p;
+    if (!p2pPromise) {
+        p2pPromise = connectP2P({ account: contract.account });
     }
+    return await p2pPromise;
 }
 
 async function publishLocation() {
     try {
-        await connectP2PIfNeeded();
-        if (!p2p) {
-            return;
-        }
+        const p2p = await connectP2PIfNeeded();
 
         const scene = game.scene.getScene('GameScene');
         if (!scene || !scene.player) {
@@ -650,7 +647,7 @@ async function publishLocation() {
 publishLocation();
 
 (async () => {
-    await connectP2PIfNeeded();
+    const p2p = await connectP2PIfNeeded();
     if (!p2p) {
         console.error("Couldn't subscribe to location updates");
         return;
