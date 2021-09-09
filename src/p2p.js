@@ -11,6 +11,7 @@ const PUBLIC_KEY_BYTES = 1 + 32;
 const SIGNATURE_BYTES = PUBLIC_KEY_BYTES + 64;
 
 const cachedPublicKeys = {};
+const lastSeenNonce = {};
 
 export async function connectP2P({ account }) {
     let { accountId, connection: { signer, provider, networkId } } = account;
@@ -86,6 +87,11 @@ export async function connectP2P({ account }) {
                 return;
             }
 
+            if (lastSeenNonce[accountId] && lastSeenNonce[accountId] >= message.nonce) {
+                console.debug('Skipping message', message, 'because old nonce');
+                return;
+            }
+            lastSeenNonce[accountId] = message.nonce;
             for (let locationListener of locationListeners) {
                 locationListener(message);
             }
@@ -94,7 +100,11 @@ export async function connectP2P({ account }) {
 
     async function send(message) {
         // console.debug('send', message);
-        const encodedMessage = Buffer.from(JSON.stringify({ accountId, ...message }));
+        const encodedMessage = Buffer.from(JSON.stringify({
+            accountId,
+            nonce: Date.now(),
+            ...message
+        }));
         const { publicKey, signature } = await signer.signMessage(encodedMessage, accountId, networkId);
         const signedMessage = Buffer.concat([
             serialize(transactions.SCHEMA, publicKey),
