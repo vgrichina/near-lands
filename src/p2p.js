@@ -71,8 +71,14 @@ export async function connectP2P({ account }) {
             const publicKey = deserialize(transactions.SCHEMA, PublicKey, signatureWithKey.slice(0, PUBLIC_KEY_BYTES));
             const signature = signatureWithKey.slice(PUBLIC_KEY_BYTES);
             const encodedMessage = signedMessage.slice(SIGNATURE_BYTES);
-            const message = JSON.parse(encodedMessage);
-            // console.debug('message', message);
+            let message;
+            try {
+                message = JSON.parse(encodedMessage);
+                // console.debug('message', message);
+            } catch (e) {
+                console.warn('Error parsing message', encodedMessage.toString('utf8'));
+                return;
+            }
 
             const keyId = `${message.accountId}::${publicKey.toString()}`;
             let hasMatchingKey = cachedHasMatchingKey[keyId];
