@@ -10,6 +10,8 @@ import { sha256 } from 'js-sha256'
 const PUBLIC_KEY_BYTES = 1 + 32;
 const SIGNATURE_BYTES = PUBLIC_KEY_BYTES + 64;
 
+const GOSSIP_PEERS = 5;
+
 const cachedHasMatchingKey = {};
 const lastSeenNonce = {};
 
@@ -29,6 +31,24 @@ export async function connectP2P({ account }) {
     function guestAccountIdFromPublicKey(publicKey) {
         const pubKeySuffix = Buffer.from(publicKey.data).slice(16).toString('hex');
         return `guest:${pubKeySuffix}`;
+    }
+
+    /**
+     * Shuffles array in place. ES6 version
+     * @param {Array} a items An array containing the items.
+     */
+    function shuffle(a) {
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    function sampleGossipPeers(peers) {
+        peers = [...peers];
+        shuffle(peers);
+        return peers.slice(0, GOSSIP_PEERS);
     }
 
     // TODO: Unhardcode this
@@ -119,6 +139,10 @@ export async function connectP2P({ account }) {
             lastSeenNonce[message.accountId] = message.nonce;
             for (let locationListener of locationListeners) {
                 locationListener(message);
+            }
+
+            for (let peer of sampleGossipPeers(peers)) {
+                peer.send(signedMessage);
             }
         })
     });
