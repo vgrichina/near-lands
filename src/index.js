@@ -13,6 +13,7 @@ import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin'
 
 import { connectP2P } from './p2p'
 import { connectNear, CONTRACT_NAME } from './near'
+import * as audioChat from './audio-chat'
 import { debounce } from './utils';
 
 import { Player, UPDATE_DELTA } from './player'
@@ -424,7 +425,16 @@ class GameScene extends Phaser.Scene
         loadChunksIfNeeded().catch(console.error);
 
         this.updateURL();
+        this.updateVolume();
     }
+
+    updateVolume = debounce(() => {
+        for (let accountId of Object.keys(accountIdToPlayer)) {
+            const { x, y } = accountIdToPlayer[accountId];
+            const volume = Math.max(0, 1 - Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) / 500) * 1000;
+            audioChat.setVolume(accountId, volume);
+        }
+    }, 100);
 
     updateURL = debounce(() => {
         const x = this.player.x / TILE_SIZE_PIXELS;
@@ -432,7 +442,9 @@ class GameScene extends Phaser.Scene
         const newHash = `#${x.toFixed(1)},${y.toFixed(1)}`;
 
         if (this.player.body.velocity.length() == 0) {
-            history.replaceState(null, null, newHash);
+            if (window.location.hash != newHash) {
+                history.replaceState(null, null, newHash);
+            }
         }
     }, 500);
 
@@ -598,21 +610,18 @@ async function onLocationUpdate({ accountId, x, y, frame, animName, animProgress
     player.updateFromRemote({ x, y, layers, frame, animName, animProgress });
 }
 
-let p2p
+let p2pPromise
 async function connectP2PIfNeeded() {
     const { contract } = await connectPromise;
-    if (!p2p) {
-        p2p = await connectP2P({ accountId: contract.account.accountId });
-        window.p2p = p2p;
+    if (!p2pPromise) {
+        p2pPromise = connectP2P({ account: contract.account });
     }
+    return await p2pPromise;
 }
 
 async function publishLocation() {
     try {
-        await connectP2PIfNeeded();
-        if (!p2p) {
-            return;
-        }
+        const p2p = await connectP2PIfNeeded();
 
         const scene = game.scene.getScene('GameScene');
         if (!scene || !scene.player) {
@@ -638,12 +647,17 @@ async function publishLocation() {
 publishLocation();
 
 (async () => {
-    await connectP2PIfNeeded();
+    const p2p = await connectP2PIfNeeded();
     if (!p2p) {
         console.error("Couldn't subscribe to location updates");
         return;
     }
     p2p.subscribeToLocation(onLocationUpdate);
+
+    const { walletConnection } = await connectPromise;
+    if (walletConnection.isSignedIn()) {
+        await audioChat.join(walletConnection.getAccountId());
+    }
 })().catch(console.error);
 
 Object.assign(window, { login, logout, game, onLocationUpdate, publishLocation });

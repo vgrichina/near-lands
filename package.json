@@ -28,7 +28,8 @@
     "parcel": "^2.0.0-beta.2"
   },
   "dependencies": {
-    "near-api-js": "^0.37.0",
+    "agora-rtc-sdk-ng": "^4.6.3",
+    "near-api-js": "^0.42.0",
     "phaser": "^3.50.0",
     "phaser3-rex-plugins": "^1.1.53",
     "regenerator-runtime": "^0.13.7",
