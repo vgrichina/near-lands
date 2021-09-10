@@ -64,33 +64,35 @@ export class UIScene extends Phaser.Scene {
         if (this.toggleMicButton) {
             this.toggleMicButton.destroy();
         }
-        this.toggleMicButton = this.createButton(getToggleMicButtonText(), 'unmute');
-        this.toggleMicButton.on('pointerup', async () => {
-            if (voiceChat.isMicEnabled()) {
-                await voiceChat.muteMic();
-            } else {
-                await voiceChat.unmuteMic();
-            }
-            updateAudioChatButtons();
-        });
-
         if (this.toggleAudioButton) {
             this.toggleAudioButton.destroy();
         }
-        this.toggleAudioButton = this.createButton(getToggleAudioButtonText(), 'unmute');
-        this.toggleAudioButton.on('pointerup', async () => {
-            if (voiceChat.isPlaybackEnabled()) {
-                voiceChat.stopPlayback();
+        if (walletConnection.isSignedIn()) {
+            this.toggleMicButton = this.createButton(getToggleMicButtonText(), 'unmute');
+            this.toggleMicButton.on('pointerup', async () => {
                 if (voiceChat.isMicEnabled()) {
                     await voiceChat.muteMic();
+                } else {
+                    await voiceChat.unmuteMic();
                 }
-            } else {
-                voiceChat.startPlayback();
-            }
-            updateAudioChatButtons();
-        });
+                updateAudioChatButtons();
+            });
 
-        updateAudioChatButtons();
+            this.toggleAudioButton = this.createButton(getToggleAudioButtonText(), 'unmute');
+            this.toggleAudioButton.on('pointerup', async () => {
+                if (voiceChat.isPlaybackEnabled()) {
+                    voiceChat.stopPlayback();
+                    if (voiceChat.isMicEnabled()) {
+                        await voiceChat.muteMic();
+                    }
+                } else {
+                    voiceChat.startPlayback();
+                }
+                updateAudioChatButtons();
+            });
+
+            updateAudioChatButtons();
+        }
 
         if (this.messageLabel) {
             this.messageLabel.destroy();
