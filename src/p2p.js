@@ -10,6 +10,7 @@ import { sha256 } from 'js-sha256'
 const PUBLIC_KEY_BYTES = 1 + 32;
 const SIGNATURE_BYTES = PUBLIC_KEY_BYTES + 64;
 
+const MAX_PEERS = 10;
 const GOSSIP_PEERS = 5;
 
 const cachedHasMatchingKey = {};
@@ -25,6 +26,7 @@ export async function connectP2P({ account }) {
     ]);
 
     const swarm = webrtcSwarm(hub, {
+        maxPeers: MAX_PEERS,
         // TODO: Tune options
     });
 
