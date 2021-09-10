@@ -96,6 +96,11 @@ export async function connectP2P({ account }) {
                 cachedHasMatchingKey[keyId] = hasMatchingKey;
             }
 
+            if (message.accountId == accountId) {
+                console.warn('Skipping message for self');
+                return;
+            }
+
             if (!hasMatchingKey) {
                 console.warn('Cannot find public key info', keyId, 'for message', message);
                 return;
@@ -107,11 +112,11 @@ export async function connectP2P({ account }) {
                 return;
             }
 
-            if (lastSeenNonce[accountId] && lastSeenNonce[accountId] >= message.nonce) {
-                console.debug('Skipping message', message, 'because old nonce');
+            if (lastSeenNonce[message.accountId] && lastSeenNonce[message.accountId] >= message.nonce) {
+                // console.debug('Skipping message', message, 'because old nonce');
                 return;
             }
-            lastSeenNonce[accountId] = message.nonce;
+            lastSeenNonce[message.accountId] = message.nonce;
             for (let locationListener of locationListeners) {
                 locationListener(message);
             }
