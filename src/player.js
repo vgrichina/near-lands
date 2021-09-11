@@ -283,6 +283,9 @@ export class Player extends Phaser.GameObjects.Container {
             );
         }
 
+        // NOTE: Adjust player depth to order multiple player sprites during render
+        this.depth = this.y;
+
         if (!this.controlledByUser) {
             return;
         }        
