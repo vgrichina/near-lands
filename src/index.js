@@ -192,7 +192,7 @@ async function setNextPixel() {
 }
 setNextPixel();
 
-const UI_DEPTH = 10;
+const UI_DEPTH = Number.MAX_VALUE;
 
 class GameScene extends Phaser.Scene
 {
