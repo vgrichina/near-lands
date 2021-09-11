@@ -218,7 +218,12 @@ class GameScene extends Phaser.Scene
         this.load.spritesheet({ key: 'skeleton', url: '/lpc-character/body/male/skeleton.png', frameConfig: { frameWidth: 64, frameHeight: 64 }});
     }
 
-    createInventory(tiles) {
+    selectInventoryTiles(tiles, { forceUpdate } = {}) {
+        if (this.inventoryTiles == tiles && !forceUpdate) {
+            return;
+        }
+        this.inventoryTiles = tiles;
+
         if (this.inventoryBorder) {
             this.inventoryBorder.destroy();
         }
@@ -326,7 +331,7 @@ class GameScene extends Phaser.Scene
         const roundPixels = true;
         this.cameras.main.startFollow(this.player, roundPixels);
 
-        this.createInventory(this.desertTiles);
+        this.selectInventoryTiles(this.desertTiles);
 
         this.selectedTile = this.inventoryMap.getTileAt(5, 3);
 
@@ -340,6 +345,11 @@ class GameScene extends Phaser.Scene
                 .setAlpha(0.75)
                 .setDepth(20);
         };
+
+        // TODO: Move inventory to the ui.js?
+        this.scale.on('resize', () => {
+            this.selectInventoryTiles(this.inventoryTiles, { forceUpdate: true });
+        });
     }
 
     handleTileDrawing = (pointer) => {
@@ -403,7 +413,7 @@ class GameScene extends Phaser.Scene
 
         this.inventoryKeys.forEach((key, i) => {
             if (Phaser.Input.Keyboard.JustDown(key)) {
-                this.createInventory(this.allTiles[i]);
+                this.selectInventoryTiles(this.allTiles[i]);
             }
         });
 
