@@ -1,7 +1,7 @@
 import * as signalhub from 'signalhub'
 import * as webrtcSwarm from 'webrtc-swarm'
+import * as ed from 'noble-ed25519';
 
-import nacl from 'tweetnacl';
 import { transactions, utils } from 'near-api-js';
 import { serialize, deserialize } from 'borsh';
 import { PublicKey } from 'near-api-js/lib/utils';
@@ -129,7 +129,7 @@ export async function connectP2P({ account }) {
             }
 
             // TODO: Expose higher level API in near-api-js, e.g. in PublicKey
-            if (!nacl.sign.detached.verify(Buffer.from(sha256.arrayBuffer(encodedMessage)), signature, publicKey.data)) {
+            if (!ed.verify(Buffer.from(signature), Buffer.from(sha256.arrayBuffer(encodedMessage)), publicKey.data)) {
                 console.warn('Invalid signature for message', message);
                 return;
             }
