@@ -106,7 +106,6 @@ export async function leave() {
 }
 
 export async function setVolume(accountId, volume) {
-    console.log('setVolume', accountId, volume);
     const user = remoteUsers[accountId];
     if (user?.audioTrack) {
         user.audioTrack.setVolume(volume);
