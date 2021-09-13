@@ -13,8 +13,13 @@ const SIGNATURE_BYTES = PUBLIC_KEY_BYTES + 64;
 const MAX_PEERS = 10;
 const GOSSIP_PEERS = 5;
 
+const MAX_SEND_PAUSE_MS = 3000;
+
 const cachedHasMatchingKey = {};
 const lastSeenNonce = {};
+
+let lastSendTime;
+let lastLocationData;
 
 export async function connectP2P({ account }) {
     let { accountId, connection: { signer, provider, networkId } } = account;
@@ -174,7 +179,12 @@ export async function connectP2P({ account }) {
         },
         publishLocation(locationData) {
             // console.debug('publishLocation');
-            send(locationData);
+            const updatedLocationData = JSON.stringify(locationData) != JSON.stringify(lastLocationData);
+            if (updatedLocationData || !lastSendTime || lastSendTime < Date.now() - MAX_SEND_PAUSE_MS) {
+                lastSendTime = Date.now();
+                lastLocationData = locationData;
+                send(locationData);
+            }
         }
     }
 }
