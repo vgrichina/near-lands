@@ -3,6 +3,8 @@ import * as marketplace from "./marketplace";
 
 import { Chunk, ChunkMap, TileInfo, LandParcel, CHUNK_SIZE, CHUNK_COUNT } from "./model"
 
+import { Web4Request, Web4Response, bodyUrl } from "./web4";
+
 export function getLandParcelRange(x: i32, y: i32, width: i32, height: i32): LandParcel[] {
   return marketplace.getLandParcelRange(x, y, width, height);
 }
@@ -49,4 +51,9 @@ export function setPeerId(accountId: string, peerId: string): void {
     storage.delete('accountId:' + lastPeerId);
   }
   storage.setString('accountId:' + peerId, accountId);
+}
+
+export function web4_get(request: Web4Request): Web4Response {
+  // Serve everything from IPFS for now
+  return bodyUrl(`https://ipfs.infura.io/ipfs/QmR3TPR7hWenNvmmRhcwYyd8jH4iRyufbBe1PqK9pUzV2A${request.path}`);
 }
