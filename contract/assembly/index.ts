@@ -55,5 +55,5 @@ export function setPeerId(accountId: string, peerId: string): void {
 
 export function web4_get(request: Web4Request): Web4Response {
   // Serve everything from IPFS for now
-  return bodyUrl(`https://ipfs.infura.io/ipfs/QmR3TPR7hWenNvmmRhcwYyd8jH4iRyufbBe1PqK9pUzV2A${request.path}`);
+  return bodyUrl(`ipfs://bafybeiebolqsn6ywlzfelqpwlypnuusuwum5usptnivj4tnqd2247vxk4i${request.path}`);
 }
