@@ -157,7 +157,10 @@ export class Player extends Phaser.GameObjects.Container {
     constructor({ scene, x, y, accountId, controlledByUser, layers = randomLayers() }) {
         const playerSprites = createSprites(scene, ['skeleton']);
 
-        const nameText = scene.add.text(0, 0, accountId, {
+        const displayedAccountId = accountId.startsWith('guest:')
+            ? `guest:${accountId.split(':')[1].substring(0, 6)}`
+            : accountId;
+        const nameText = scene.add.text(0, 0, displayedAccountId, {
             fontSize: 16,
             fontFamily: 'sans-serif',
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
