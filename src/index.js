@@ -446,13 +446,16 @@ class GameScene extends Phaser.Scene
         const ROLLOFF_FACTOR = 1;
 
         for (let accountId of Object.keys(accountIdToPlayer)) {
-            const { x, y } = accountIdToPlayer[accountId];
-            const distance = Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y);
+            const player = accountIdToPlayer[accountId];
+            const distance = Phaser.Math.Distance.Between(player.x, player.y, this.player.x, this.player.y);
             // TODO: Experiment more with formulas
             // See https://medium.com/@kfarr/understanding-web-audio-api-positional-audio-distance-models-for-webxr-e77998afcdff
             const volume = REF_DISTANCE / (REF_DISTANCE + ROLLOFF_FACTOR * (Math.max(REF_DISTANCE, distance) - REF_DISTANCE)) * MAX_VOLUME;
             audioChat.setVolume(accountId, volume);
+
+            player.setVolumeLevel(audioChat.getInputVolume(accountId));
         }
+        this.player.setVolumeLevel(audioChat.getInputVolume());
     }, 100);
 
     updateURL = debounce(() => {

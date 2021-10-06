@@ -191,6 +191,36 @@ export class Player extends Phaser.GameObjects.Container {
         scene.physics.add.collider(this, scene.autotileLayer);
 
         this.preloadLayers(layers);
+
+        if (!this.scene.textures.exists('sound-emoji')) {
+            let emojiText = this.scene.make.text({
+                add: false,
+                x: 0,
+                y: 0,
+                text: '🔊',
+                style: {
+                    fontSize: '32px',
+                    color: '#ffffff',
+                    align: 'center',
+                }
+            });
+            this.scene.textures.addCanvas('sound-emoji', emojiText.canvas);
+        }
+
+        this.emitter = this.scene.add.particles('sound-emoji').createEmitter({
+            alpha: { start: 1, end: 0 },
+            speed: { min: 120, max: 120 },
+            angle: { min: -120, max: -60 },
+            gravityY: -100,
+            lifespan: { min: 500, max: 1000 },
+            frequency: 150,
+            emitZone: {
+                type: 'random',
+                source: new Phaser.Geom.Circle(0, -48, 8)
+            },
+            follow: this,
+        });
+        this.emitter.stop();
     }
 
     get layers() {
@@ -278,6 +308,15 @@ export class Player extends Phaser.GameObjects.Container {
         });
     }
 
+    setVolumeLevel(level) {
+        if (level < 0.01) {
+            this.emitter.stop();
+        } else {
+            this.emitter.start();
+            this.emitter.setAlpha({ start: Math.min(1, level * 10), end: 0 })
+        }
+    }
+
     preUpdate(time, delta) {
         if (this.targetPosition) {
             this.setPosition(
@@ -291,7 +330,7 @@ export class Player extends Phaser.GameObjects.Container {
 
         if (!this.controlledByUser) {
             return;
-        }        
+        }
 
         const uiScene = this.scene.scene.get('UIScene');
 

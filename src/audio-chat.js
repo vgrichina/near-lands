@@ -112,6 +112,18 @@ export async function setVolume(accountId, volume) {
     }
 }
 
+export function getInputVolume(accountId) {
+    if (!accountId) {
+        return localTracks?.audioTrack?.getVolumeLevel() || 0;
+    }
+
+    const user = remoteUsers[accountId];
+    if (user?.audioTrack) {
+        return user.audioTrack.getVolumeLevel();
+    }
+    return 0;
+}
+
 /*
  * Add the local use to a remote channel.
  *
