@@ -1,7 +1,7 @@
 {
-  "name": "phaser3-project-template",
-  "version": "1.1.2",
-  "description": "A Phaser 3 Project Template",
+  "name": "near-lands",
+  "version": "0.1.0",
+  "description": "NEAR Lands",
   "scripts": {
     "build": "parcel build index.html --dist-dir dist/",
     "postbuild": "cp -R static/* dist/",
@@ -14,15 +14,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/photonstorm/phaser3-project-template.git"
+    "url": "git+https://github.com/vgrichina/near-lands.git"
   },
-  "author": "Richard Davey <rdavey@gmail.com> (http://www.photonstorm.com)",
+  "author": "Vlad Grichina <vgrichina@gmail.com>",
   "license": "MIT",
   "licenseUrl": "http://www.opensource.org/licenses/mit-license.php",
   "bugs": {
-    "url": "https://github.com/photonstorm/phaser3-project-template/issues"
+    "url": "https://github.com/vgrichina/near-lands/issues"
   },
-  "homepage": "https://github.com/photonstorm/phaser3-project-template#readme",
+  "homepage": "https://lands.near.page",
   "devDependencies": {
     "@parcel/transformer-image": "2.0.0-beta.2",
     "parcel": "^2.0.0-beta.2"
