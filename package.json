@@ -10,6 +10,7 @@
     "build:contract:debug": "cd contract && npm run build:debug",
     "dev:deploy:contract": "near dev-deploy --wasmFile contract/build/debug/lands.wasm",
     "deploy:contract": "near deploy --wasmFile contract/build/release/lands.wasm --accountId lands.near",
+    "deploy:ipfs": "npm run build && ipfs-deploy dist/",
     "deploy": "npm run build:contract && npm run deploy:contract"
   },
   "repository": {
@@ -25,6 +26,7 @@
   "homepage": "https://lands.near.page",
   "devDependencies": {
     "@parcel/transformer-image": "2.0.0-beta.2",
+    "ipfs-deploy": "^11.0.1",
     "parcel": "^2.0.0-beta.2"
   },
   "dependencies": {
