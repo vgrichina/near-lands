@@ -35,22 +35,8 @@ export function getParcelNonces(x: i32, y: i32): i32[][] {
   return ChunkMap.get(x, y).chunkNonces;
 }
 
-export function getPeerId(accountId: string): string | null {
-  return storage.getString('peerId:' + accountId);
-}
-
 export function getAccountId(peerId: string): string | null {
   return storage.getString('accountId:' + peerId);
-}
-
-// TODO: Verify signature to make sure peer ID is not bogus
-export function setPeerId(accountId: string, peerId: string): void {
-  const lastPeerId = getPeerId(accountId);
-  storage.setString('peerId:' + accountId, peerId);
-  if (lastPeerId) {
-    storage.delete('accountId:' + lastPeerId);
-  }
-  storage.setString('accountId:' + peerId, accountId);
 }
 
 export function web4_get(request: Web4Request): Web4Response {
