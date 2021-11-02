@@ -99,7 +99,7 @@ This is exists to account for limited real world storage and create incentive to
 ### Structuring storage around gas limits
 
 There is only limited amount of gas available to every operation. This means the amount of storage that can be modified at once is also limited.
-You can overcome it by splitting game state into multiple chunks. 
+You can overcome it by splitting game state into multiple chunks.
 
 For example NEAR Lands splits map into smaller squares using [`Chunk` model](https://github.com/vgrichina/near-lands/blob/7724eb7015d03f0522187a1d4a9bbe826a27e615/contract/assembly/model.ts#L10) and takes tracks which ones were recently changed using [`ChunkMap` model](https://github.com/vgrichina/near-lands/blob/7724eb7015d03f0522187a1d4a9bbe826a27e615/contract/assembly/model.ts#L52)
 
@@ -113,7 +113,7 @@ Another interesting game to study for performance optimizations is [Berry Club](
 
 You can direct users to pay directly to your `.near` account. It works like a charm if you just want to accept donations, etc.
 
-However it gets harder if you want to detect payment and allow to do smth else like give users corresponding number of in-game currency. 
+However it gets harder if you want to detect payment and allow to do smth else like give users corresponding number of in-game currency.
 You can use some blockchain indexer, e.g. https://github.com/near/near-indexer-for-explorer. Easiest way to use it would be to query one of [publicly available Postgres instances](https://github.com/near/near-indexer-for-explorer#shared-public-access).
 
 So the recommended way to accept payment is to use a smart contract. In this case your smart contract can have logic which verifies sender, amount and other parameters and automatically updates state of user's account accordingly (e.g. sends user a NFT for sword they just purchased).
@@ -176,6 +176,8 @@ export function purchaseItem(itemId: string): void {
 ### Pluminite
 ### Mintbase
 ### Paras
+
+## How to generate random numbers fairly
 
 ## What games can get most of blockchain?
 
