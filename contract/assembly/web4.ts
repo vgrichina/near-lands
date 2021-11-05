@@ -80,6 +80,10 @@ export function htmlResponse(text: string): Web4Response {
     return { contentType: 'text/html; charset=UTF-8', body: util.stringToBytes(text) };
 }
 
+export function svgResponse(text: string): Web4Response {
+    return { contentType: 'image/svg+xml; charset=UTF-8', body: util.stringToBytes(text) };
+}
+
 export function preloadUrls(urls: string[]): Web4Response {
     return { preloadUrls: urls };
 }

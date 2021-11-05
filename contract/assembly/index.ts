@@ -1,9 +1,9 @@
-import { storage, u128 } from "near-sdk-as";
+import { storage, u128, util } from "near-sdk-as";
 import * as marketplace from "./marketplace";
 
 import { Chunk, ChunkMap, TileInfo, LandParcel, CHUNK_SIZE, CHUNK_COUNT } from "./model"
 
-import { Web4Request, Web4Response, bodyUrl } from "./web4";
+import { Web4Request, Web4Response, bodyUrl, svgResponse } from "./web4";
 
 export function getLandParcelRange(x: i32, y: i32, width: i32, height: i32): LandParcel[] {
   return marketplace.getLandParcelRange(x, y, width, height);
@@ -39,7 +39,70 @@ export function getAccountId(peerId: string): string | null {
   return storage.getString('accountId:' + peerId);
 }
 
+function renderChunk(x: i32, y: i32): string {
+  const pieces: string[] = [];
+  const chunk = Chunk.get(x, y);
+  for (let y = 0; y < CHUNK_SIZE; y++) {
+    for (let x = 0; x < CHUNK_SIZE; x++) {
+      const tileId = chunk.tiles[y][x];
+      const fillColor = parseInt(tileId) > 10 ? 'red' : 'blue';
+      pieces.push(`<rect x="${x}" y="${y}" width="1" height="1" style="fill:${fillColor};" />`);
+    }
+  }
+  return pieces.join('\n');
+}
+
+function renderParcel(x: i32, y: i32): string {
+  const chunks: string[] = [];
+  for (let i = 0; i < CHUNK_COUNT; i++) {
+    for (let j = 0; j < CHUNK_COUNT; j++) {
+      chunks.push(`<svg x="${(i + x) * CHUNK_SIZE}" y="${(j + y) * CHUNK_SIZE}">${renderChunk(i + x, j + y)}</svg>`);
+    }
+  }
+  return chunks.join('\n');
+}
+
 export function web4_get(request: Web4Request): Web4Response {
+  if (request.path.startsWith('/chunk')) {
+    const parts = request.path.split('/');
+    assert(parts.length == 3, 'Unrecognized chunk path: ' + request.path);
+
+    const chunkId = parts[2];
+    const chunkCoords = chunkId.split(',');
+    assert(chunkCoords.length == 2, 'Unrecognized chunk ID: ' + chunkId);
+
+    const chunk = renderChunk(util.parseFromString<i32>(chunkCoords[0]), util.parseFromString<i32>(chunkCoords[1]));
+
+    return svgResponse(`<svg
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      version="1.1" width="${CHUNK_SIZE}" height="${CHUNK_SIZE}" viewBox="0 0 ${CHUNK_SIZE} ${CHUNK_SIZE}">
+
+      ${chunk}
+    </svg>`);
+  }
+
+  if (request.path.startsWith('/parcel')) {
+    const parts = request.path.split('/');
+    assert(parts.length == 3, 'Unrecognized parcel path: ' + request.path);
+
+    const parcelId = parts[2];
+    const parcelCoords = parcelId.split(',');
+    assert(parcelCoords.length == 2, 'Unrecognized parcel ID: ' + parcelId);
+
+    const parcel = renderParcel(util.parseFromString<i32>(parcelCoords[0]), util.parseFromString<i32>(parcelCoords[1]));
+    return svgResponse(`<svg
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      version="1.1"
+      width="${CHUNK_SIZE * CHUNK_COUNT}"
+      height="${CHUNK_SIZE * CHUNK_COUNT}"
+      viewBox="0 0 ${CHUNK_SIZE * CHUNK_COUNT} ${CHUNK_SIZE * CHUNK_COUNT}">
+
+      ${parcel}
+    </svg>`);
+  }
+
   // Serve everything from IPFS for now
   return bodyUrl(`ipfs://bafybeigtmldjlcrbstam5wgy3qtl2me7vwowo2jp4igunzum5gwfu3vkpi${request.path}`);
 }
