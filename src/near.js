@@ -1,6 +1,6 @@
 import { connect, WalletConnection, keyStores, Contract, Account } from 'near-api-js';
 
-export const CONTRACT_NAME = 'lands.near';
+export const CONTRACT_NAME = process.env.CONTRACT_NAME || 'lands.near';
 
 export async function connectNear() {
     const APP_KEY_PREFIX = 'near-lands:'
