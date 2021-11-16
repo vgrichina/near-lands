@@ -7,6 +7,8 @@ import { serialize, deserialize } from 'borsh';
 import { PublicKey } from 'near-api-js/lib/utils';
 import { sha256 } from 'js-sha256'
 
+import { CONTRACT_NAME } from './near'; 
+
 const PUBLIC_KEY_BYTES = 1 + 32;
 const SIGNATURE_BYTES = PUBLIC_KEY_BYTES + 64;
 
@@ -58,8 +60,7 @@ export async function connectP2P({ account }) {
         return peers.slice(0, GOSSIP_PEERS);
     }
 
-    // TODO: Unhardcode this
-    if (accountId == 'lands.near') {
+    if (accountId == CONTRACT_NAME) {
         accountId = localStorage.getItem('p2p:guest-account');
         const { keyStore } = signer;
         if (!accountId || !(await keyStore.getKey(networkId, accountId))) {
