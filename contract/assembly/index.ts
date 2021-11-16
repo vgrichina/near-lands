@@ -35,10 +35,6 @@ export function getParcelNonces(x: i32, y: i32): i32[][] {
   return ChunkMap.get(x, y).chunkNonces;
 }
 
-export function getAccountId(peerId: string): string | null {
-  return storage.getString('accountId:' + peerId);
-}
-
 function renderChunk(x: i32, y: i32): string {
   const pieces: string[] = [];
   const chunk = Chunk.get(x, y);
