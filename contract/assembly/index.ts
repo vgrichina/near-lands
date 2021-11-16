@@ -40,8 +40,8 @@ function renderChunk(x: i32, y: i32): string {
   const chunk = Chunk.get(x, y);
   for (let y = 0; y < CHUNK_SIZE; y++) {
     for (let x = 0; x < CHUNK_SIZE; x++) {
-      const tileId = chunk.tiles[y][x];
-      const fillColor = parseInt(tileId) > 10 ? 'red' : 'blue';
+      const tileId = chunk.tiles[x][y];
+      const fillColor = parseInt(tileId) >= 0 ? 'red' : 'black';
       pieces.push(`<rect x="${x}" y="${y}" width="1" height="1" style="fill:${fillColor};" />`);
     }
   }
@@ -52,7 +52,7 @@ function renderParcel(x: i32, y: i32): string {
   const chunks: string[] = [];
   for (let i = 0; i < CHUNK_COUNT; i++) {
     for (let j = 0; j < CHUNK_COUNT; j++) {
-      chunks.push(`<svg x="${(i + x) * CHUNK_SIZE}" y="${(j + y) * CHUNK_SIZE}">${renderChunk(i + x, j + y)}</svg>`);
+      chunks.push(`<svg x="${i * CHUNK_SIZE}" y="${j * CHUNK_SIZE}">${renderChunk(i + x, j + y)}</svg>`);
     }
   }
   return chunks.join('\n');
