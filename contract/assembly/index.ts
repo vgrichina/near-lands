@@ -1,4 +1,4 @@
-import { storage, u128, util } from "near-sdk-as";
+import { storage, u128, util, logging } from "near-sdk-as";
 import * as marketplace from "./marketplace";
 
 import { Chunk, ChunkMap, TileInfo, LandParcel, CHUNK_SIZE, CHUNK_COUNT } from "./model"
@@ -59,7 +59,10 @@ function renderParcel(x: i32, y: i32): string {
 }
 
 export function web4_get(request: Web4Request): Web4Response {
+  logging.log(`web4_get: ${request.path}`);
+
   if (request.path.startsWith('/chunk')) {
+    logging.log('serve chunk');
     const parts = request.path.split('/');
     assert(parts.length == 3, 'Unrecognized chunk path: ' + request.path);
 
@@ -79,6 +82,7 @@ export function web4_get(request: Web4Request): Web4Response {
   }
 
   if (request.path.startsWith('/parcel')) {
+    logging.log('serve parcel')
     const parts = request.path.split('/');
     assert(parts.length == 3, 'Unrecognized parcel path: ' + request.path);
 
@@ -100,5 +104,6 @@ export function web4_get(request: Web4Request): Web4Response {
   }
 
   // Serve everything from IPFS for now
+  logging.log('serve from IPFS');
   return bodyUrl(`ipfs://bafybeigtmldjlcrbstam5wgy3qtl2me7vwowo2jp4igunzum5gwfu3vkpi${request.path}`);
 }
