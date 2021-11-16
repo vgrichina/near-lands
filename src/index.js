@@ -108,7 +108,7 @@ async function loadChunksIfNeeded() {
     for (let i = startX; i < endX; i++) {
         for (let j = startY; j < endY; j++) {
             const { nonce, loading } = fullMap[i][j] || {};
-            if ((!nonce || nonce < nonceMap[i][j]) && !loading) {
+            if ((nonce == null || nonce < nonceMap[i][j]) && !loading) {
                 console.debug('nonce mismatch for chunk', i, j, nonce, nonceMap[i][j], );
                 fullMap[i][j] = { ...fullMap[i][j], loading: true };
                 // NOTE: no await on purpose
