@@ -105,5 +105,5 @@ export function web4_get(request: Web4Request): Web4Response {
 
   // Serve everything from IPFS for now
   logging.log('serve from IPFS');
-  return bodyUrl(`ipfs://bafybeigtmldjlcrbstam5wgy3qtl2me7vwowo2jp4igunzum5gwfu3vkpi${request.path}`);
+  return bodyUrl(`ipfs://bafybeicqirvhpckke36fscm6qcppuc5eytqoahavuw4vbcq3ccibe45csm${request.path}`);
 }
