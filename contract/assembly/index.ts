@@ -1,9 +1,9 @@
 import { storage, u128, util, logging } from "near-sdk-as";
 import * as marketplace from "./marketplace";
 
-import { Chunk, ChunkMap, TileInfo, LandParcel, CHUNK_SIZE, CHUNK_COUNT } from "./model"
+import { Chunk, ChunkMap, TileInfo, LandParcel, CHUNK_SIZE, CHUNK_COUNT, PARCEL_COUNT } from "./model"
 
-import { Web4Request, Web4Response, bodyUrl, svgResponse } from "./web4";
+import { Web4Request, Web4Response, bodyUrl, svgResponse, htmlResponse } from "./web4";
 
 export function getLandParcelRange(x: i32, y: i32, width: i32, height: i32): LandParcel[] {
   return marketplace.getLandParcelRange(x, y, width, height);
@@ -101,6 +101,18 @@ export function web4_get(request: Web4Request): Web4Response {
 
       ${parcel}
     </svg>`);
+  }
+
+  if (request.path.startsWith('/minimap')) {
+    const lines: string[] = [];
+    for (let j = 0; j < PARCEL_COUNT; j++) {
+      lines.push('<div>');
+      for (let i = 0; i < PARCEL_COUNT; i++) {
+        lines.push(`<img src="/parcel/${i},${j}">`);
+      }
+      lines.push('</div>');
+    }
+    return htmlResponse(lines.join('\n'));
   }
 
   // Serve everything from IPFS for now
