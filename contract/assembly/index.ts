@@ -6,116 +6,116 @@ import { Chunk, ChunkMap, TileInfo, LandParcel, CHUNK_SIZE, CHUNK_COUNT, PARCEL_
 import { Web4Request, Web4Response, bodyUrl, svgResponse, htmlResponse } from "./web4";
 
 export function getLandParcelRange(x: i32, y: i32, width: i32, height: i32): LandParcel[] {
-  return marketplace.getLandParcelRange(x, y, width, height);
+    return marketplace.getLandParcelRange(x, y, width, height);
 }
 
 export function offerChunk(x: u32, y: u32, price: string): void {
-  marketplace.offerParcel(x, y, u128.from(price));
+    marketplace.offerParcel(x, y, u128.from(price));
 }
 
 export function buyParcel(x: u32, y: u32): void {
-  marketplace.buyParcel(x, y);
+    marketplace.buyParcel(x, y);
 }
 
 export function setTiles(tiles: TileInfo[]): void {
-  assert(tiles.length > 0, 'setting 0 tiles not supported');
+    assert(tiles.length > 0, 'setting 0 tiles not supported');
 
-  let firstTile = tiles[0];
-  let parcelX = firstTile.x / CHUNK_SIZE / CHUNK_COUNT;
-  let parcelY = firstTile.y / CHUNK_SIZE / CHUNK_COUNT;
-  let map = ChunkMap.get(parcelX, parcelY);
-  map.setTiles(tiles);
+    let firstTile = tiles[0];
+    let parcelX = firstTile.x / CHUNK_SIZE / CHUNK_COUNT;
+    let parcelY = firstTile.y / CHUNK_SIZE / CHUNK_COUNT;
+    let map = ChunkMap.get(parcelX, parcelY);
+    map.setTiles(tiles);
 }
 
 export function getChunk(x: i32, y: i32): Chunk {
-  return Chunk.get(x, y);
+    return Chunk.get(x, y);
 }
 
 export function getParcelNonces(x: i32, y: i32): i32[][] {
-  return ChunkMap.get(x, y).chunkNonces;
+    return ChunkMap.get(x, y).chunkNonces;
 }
 
 function renderChunk(x: i32, y: i32): string {
-  const pieces: string[] = [];
-  const chunk = Chunk.get(x, y);
-  for (let y = 0; y < CHUNK_SIZE; y++) {
-    for (let x = 0; x < CHUNK_SIZE; x++) {
-      const tileId = chunk.tiles[x][y];
-      const fillColor = parseInt(tileId) >= 0 ? 'red' : 'black';
-      pieces.push(`<rect x="${x}" y="${y}" width="1" height="1" style="fill:${fillColor};" />`);
+    const pieces: string[] = [];
+    const chunk = Chunk.get(x, y);
+    for (let y = 0; y < CHUNK_SIZE; y++) {
+        for (let x = 0; x < CHUNK_SIZE; x++) {
+            const tileId = chunk.tiles[x][y];
+            const fillColor = parseInt(tileId) >= 0 ? 'red' : 'black';
+            pieces.push(`<rect x="${x}" y="${y}" width="1" height="1" style="fill:${fillColor};" />`);
+        }
     }
-  }
-  return pieces.join('\n');
+    return pieces.join('\n');
 }
 
 function renderParcel(x: i32, y: i32): string {
-  const chunks: string[] = [];
-  for (let i = 0; i < CHUNK_COUNT; i++) {
-    for (let j = 0; j < CHUNK_COUNT; j++) {
-      chunks.push(`<svg x="${i * CHUNK_SIZE}" y="${j * CHUNK_SIZE}">${renderChunk(i + x * CHUNK_COUNT, j + y * CHUNK_COUNT)}</svg>`);
+    const chunks: string[] = [];
+    for (let i = 0; i < CHUNK_COUNT; i++) {
+        for (let j = 0; j < CHUNK_COUNT; j++) {
+            chunks.push(`<svg x="${i * CHUNK_SIZE}" y="${j * CHUNK_SIZE}">${renderChunk(i + x * CHUNK_COUNT, j + y * CHUNK_COUNT)}</svg>`);
+        }
     }
-  }
-  return chunks.join('\n');
+    return chunks.join('\n');
 }
 
 export function web4_get(request: Web4Request): Web4Response {
-  logging.log(`web4_get: ${request.path}`);
+    logging.log(`web4_get: ${request.path}`);
 
-  if (request.path.startsWith('/chunk')) {
-    logging.log('serve chunk');
-    const parts = request.path.split('/');
-    assert(parts.length == 3, 'Unrecognized chunk path: ' + request.path);
+    if (request.path.startsWith('/chunk')) {
+        logging.log('serve chunk');
+        const parts = request.path.split('/');
+        assert(parts.length == 3, 'Unrecognized chunk path: ' + request.path);
 
-    const chunkId = parts[2];
-    const chunkCoords = chunkId.split(',');
-    assert(chunkCoords.length == 2, 'Unrecognized chunk ID: ' + chunkId);
+        const chunkId = parts[2];
+        const chunkCoords = chunkId.split(',');
+        assert(chunkCoords.length == 2, 'Unrecognized chunk ID: ' + chunkId);
 
-    const chunk = renderChunk(util.parseFromString<i32>(chunkCoords[0]), util.parseFromString<i32>(chunkCoords[1]));
+        const chunk = renderChunk(util.parseFromString<i32>(chunkCoords[0]), util.parseFromString<i32>(chunkCoords[1]));
 
-    return svgResponse(`<svg
-      xmlns="http://www.w3.org/2000/svg"
-      xmlns:xlink="http://www.w3.org/1999/xlink"
-      version="1.1" width="${CHUNK_SIZE}" height="${CHUNK_SIZE}" viewBox="0 0 ${CHUNK_SIZE} ${CHUNK_SIZE}">
+        return svgResponse(`<svg
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            version="1.1" width="${CHUNK_SIZE}" height="${CHUNK_SIZE}" viewBox="0 0 ${CHUNK_SIZE} ${CHUNK_SIZE}">
 
-      ${chunk}
-    </svg>`);
-  }
-
-  if (request.path.startsWith('/parcel')) {
-    logging.log('serve parcel')
-    const parts = request.path.split('/');
-    assert(parts.length == 3, 'Unrecognized parcel path: ' + request.path);
-
-    const parcelId = parts[2];
-    const parcelCoords = parcelId.split(',');
-    assert(parcelCoords.length == 2, 'Unrecognized parcel ID: ' + parcelId);
-
-    const parcel = renderParcel(util.parseFromString<i32>(parcelCoords[0]), util.parseFromString<i32>(parcelCoords[1]));
-    return svgResponse(`<svg
-      xmlns="http://www.w3.org/2000/svg"
-      xmlns:xlink="http://www.w3.org/1999/xlink"
-      version="1.1"
-      width="${CHUNK_SIZE * CHUNK_COUNT}"
-      height="${CHUNK_SIZE * CHUNK_COUNT}"
-      viewBox="0 0 ${CHUNK_SIZE * CHUNK_COUNT} ${CHUNK_SIZE * CHUNK_COUNT}">
-
-      ${parcel}
-    </svg>`);
-  }
-
-  if (request.path.startsWith('/minimap')) {
-    const lines: string[] = [];
-    for (let j = 0; j < PARCEL_COUNT; j++) {
-      lines.push('<div>');
-      for (let i = 0; i < PARCEL_COUNT; i++) {
-        lines.push(`<img src="/parcel/${i},${j}">`);
-      }
-      lines.push('</div>');
+            ${chunk}
+        </svg>`);
     }
-    return htmlResponse(lines.join('\n'));
-  }
 
-  // Serve everything from IPFS for now
-  logging.log('serve from IPFS');
-  return bodyUrl(`ipfs://bafybeifzsrc3hvrnblfj4dnkmfgj7ckr3366us7lsletg73ubyjfrkvuiu${request.path}`);
+    if (request.path.startsWith('/parcel')) {
+        logging.log('serve parcel')
+        const parts = request.path.split('/');
+        assert(parts.length == 3, 'Unrecognized parcel path: ' + request.path);
+
+        const parcelId = parts[2];
+        const parcelCoords = parcelId.split(',');
+        assert(parcelCoords.length == 2, 'Unrecognized parcel ID: ' + parcelId);
+
+        const parcel = renderParcel(util.parseFromString<i32>(parcelCoords[0]), util.parseFromString<i32>(parcelCoords[1]));
+        return svgResponse(`<svg
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            version="1.1"
+            width="${CHUNK_SIZE * CHUNK_COUNT}"
+            height="${CHUNK_SIZE * CHUNK_COUNT}"
+            viewBox="0 0 ${CHUNK_SIZE * CHUNK_COUNT} ${CHUNK_SIZE * CHUNK_COUNT}">
+
+            ${parcel}
+        </svg>`);
+    }
+
+    if (request.path.startsWith('/minimap')) {
+        const lines: string[] = [];
+        for (let j = 0; j < PARCEL_COUNT; j++) {
+            lines.push('<div>');
+            for (let i = 0; i < PARCEL_COUNT; i++) {
+                lines.push(`<img src="/parcel/${i},${j}">`);
+            }
+            lines.push('</div>');
+        }
+        return htmlResponse(lines.join('\n'));
+    }
+
+    // Serve everything from IPFS for now
+    logging.log('serve from IPFS');
+    return bodyUrl(`ipfs://bafybeifzsrc3hvrnblfj4dnkmfgj7ckr3366us7lsletg73ubyjfrkvuiu${request.path}`);
 }
