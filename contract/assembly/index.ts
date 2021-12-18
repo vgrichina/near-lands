@@ -52,7 +52,7 @@ function renderParcel(x: i32, y: i32): string {
   const chunks: string[] = [];
   for (let i = 0; i < CHUNK_COUNT; i++) {
     for (let j = 0; j < CHUNK_COUNT; j++) {
-      chunks.push(`<svg x="${i * CHUNK_SIZE}" y="${j * CHUNK_SIZE}">${renderChunk(i + x, j + y)}</svg>`);
+      chunks.push(`<svg x="${i * CHUNK_SIZE}" y="${j * CHUNK_SIZE}">${renderChunk(i + x * CHUNK_COUNT, j + y * CHUNK_COUNT)}</svg>`);
     }
   }
   return chunks.join('\n');
