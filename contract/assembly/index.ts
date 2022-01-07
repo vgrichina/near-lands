@@ -40,8 +40,17 @@ function renderChunk(x: i32, y: i32): string {
     const chunk = Chunk.get(x, y);
     for (let y = 0; y < CHUNK_SIZE; y++) {
         for (let x = 0; x < CHUNK_SIZE; x++) {
-            const tileId = chunk.tiles[x][y];
-            const fillColor = parseInt(tileId) >= 0 ? 'red' : 'black';
+            const tileId = util.parseFromString<i32>(chunk.tiles[x][y]);
+            let fillColor = 'black';
+            if (tileId >= 48 && tileId < 66) {
+                fillColor = '#477f3f';
+            } else if (tileId >= 66 && tileId < 66 + 18) {
+                fillColor = '#336a95';
+            } else if ([30, 31, 37, 38, 39, 45, 46, 47].includes(tileId)) {
+                fillColor = '#7a715f';
+            } else if (tileId > 0) {
+                fillColor = '#f8d29c';
+            }
             pieces.push(`<rect x="${x}" y="${y}" width="1" height="1" style="fill:${fillColor};" />`);
         }
     }
