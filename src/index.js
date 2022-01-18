@@ -25,7 +25,7 @@ const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
 const SET_TILE_BATCH_SIZE = 10;
 const DEBUG = false;
 
-const FAST_NEAR_URL = process.env.FAST_NEAR_URL || 'https://fastrpc.mainnet.near.org';
+const WEB4_URL = process.env.WEB4_URL || 'https://lands.near.page';
 
 const connectPromise = connectNear();
 
@@ -76,7 +76,7 @@ async function loadParcels() {
         for (let parcelX = startX; parcelX < endX; parcelX++) {
             for (let parcelY = startY; parcelY < endY; parcelY++) {
                 const parcelNonces = await sendJson('GET',
-                    `${FAST_NEAR_URL}/account/${CONTRACT_NAME}/view/getParcelNonces?x.json=${parcelX}&y.json=${parcelY}`);
+                    `${WEB4_URL}/web4/contract/${CONTRACT_NAME}/getParcelNonces?x.json=${parcelX}&y.json=${parcelY}`);
 
                 for (let i = 0; i < parcelNonces.length; i++) {
                     for (let j = 0; j < parcelNonces[i].length; j++) {
@@ -117,7 +117,7 @@ async function loadChunksIfNeeded() {
                 console.debug('nonce mismatch for chunk', i, j, nonce, nonceMap[i][j], );
                 fullMap[i][j] = { ...fullMap[i][j], loading: true };
                 // NOTE: no await on purpose
-                await sendJson('GET', `${FAST_NEAR_URL}/account/${CONTRACT_NAME}/view/getChunk?x.json=${i}&y.json=${j}`)
+                await sendJson('GET', `${WEB4_URL}/web4/contract/${CONTRACT_NAME}/getChunk?x.json=${i}&y.json=${j}`)
                     .then(chunk => {
                         fullMap[i][j] = { ...chunk, loading: false };
                         updateChunk(i, j);
