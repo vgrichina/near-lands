@@ -26,7 +26,7 @@
   "homepage": "https://lands.near.page",
   "devDependencies": {
     "@parcel/transformer-image": "2.0.0-beta.2",
-    "ipfs-deploy": "^11.0.1",
+    "ipfs-deploy": "^11.1.0",
     "parcel": "^2.0.0-beta.2"
   },
   "dependencies": {
