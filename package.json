@@ -5,7 +5,9 @@
   "scripts": {
     "build": "parcel build index.html --dist-dir dist/",
     "postbuild": "cp -R static/* dist/",
-    "start": "parcel index.html",
+    "prestart": "npm run build:contract:debug && npm run dev:deploy:contract",
+    "start": "env-cmd -f neardev/dev-account.env parcel index.html",
+    "dev": "nodemon --watch contract -e ts --exec \"npm run start\"",
     "build:contract": "cd contract && npm run build:release",
     "build:contract:debug": "cd contract && npm run build:debug",
     "dev:deploy:contract": "near dev-deploy --wasmFile contract/build/debug/lands.wasm",
@@ -26,7 +28,9 @@
   "homepage": "https://lands.near.page",
   "devDependencies": {
     "@parcel/transformer-image": "2.0.0-beta.2",
+    "env-cmd": "^10.1.0",
     "ipfs-deploy": "^11.1.0",
+    "nodemon": "^2.0.15",
     "parcel": "^2.0.0-beta.2"
   },
   "dependencies": {

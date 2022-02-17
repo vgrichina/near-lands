@@ -5,7 +5,7 @@ export const CONTRACT_NAME = process.env.CONTRACT_NAME || 'lands.near';
 export async function connectNear() {
     const APP_KEY_PREFIX = 'near-lands:'
     const near = await connect({
-        nodeUrl: process.env.NODE_URL || 'https://rpc.mainnet.near.org',
+        nodeUrl: process.env.NODE_URL || 'https://rpc.testnet.near.org',
         walletUrl: 'https://wallet.near.org',
         networkId: 'default',
         keyStore: new keyStores.BrowserLocalStorageKeyStore(window.localStorage, APP_KEY_PREFIX)
