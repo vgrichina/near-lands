@@ -25,7 +25,7 @@ const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
 const SET_TILE_BATCH_SIZE = 10;
 const DEBUG = false;
 
-const WEB4_URL = process.env.WEB4_URL || 'https://lands.near.page';
+const WEB4_URL = process.env.WEB4_URL || '';
 
 const connectPromise = connectNear();
 
