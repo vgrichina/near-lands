@@ -27,7 +27,7 @@ export async function connectP2P({ account }) {
     let { accountId, connection: { signer, provider, networkId } } = account;
 
     const hub = signalhub('near-lands', [
-        'signalhub.humanguild.io',
+        'https://signalhub.humanguild.io',
         // TODO: Have some fallbacks
     ]);
 
