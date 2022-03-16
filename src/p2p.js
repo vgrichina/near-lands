@@ -27,9 +27,8 @@ export async function connectP2P({ account }) {
     let { accountId, connection: { signer, provider, networkId } } = account;
 
     const hub = signalhub('near-lands', [
-        'https://near-signalhub.onrender.com',
+        'signalhub.humanguild.io',
         // TODO: Have some fallbacks
-        // TODO: Is it feasible to use chain for signaling?
     ]);
 
     const swarm = webrtcSwarm(hub, {
