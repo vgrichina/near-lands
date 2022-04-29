@@ -1,4 +1,4 @@
-import { storage, u128, util, logging } from "near-sdk-as";
+import { storage, u128, util, logging, context } from "near-sdk-as";
 import * as marketplace from "./marketplace";
 
 import { Chunk, ChunkMap, TileInfo, LandParcel, CHUNK_SIZE, CHUNK_COUNT, PARCEL_COUNT } from "./model"
@@ -67,6 +67,18 @@ function renderParcel(x: i32, y: i32): string {
     return chunks.join('\n');
 }
 
+function assertOwner(): void {
+    assert(context.sender == context.contractName);
+}
+
+const WEB4_STATIC_URL_KEY = 'web4:staticUrl';
+
+export function web4_setStaticUrl(url: string): void {
+    assertOwner();
+
+    storage.set(WEB4_STATIC_URL_KEY, url);
+}
+
 export function web4_get(request: Web4Request): Web4Response {
     logging.log(`web4_get: ${request.path}`);
 
@@ -126,5 +138,5 @@ export function web4_get(request: Web4Request): Web4Response {
 
     // Serve everything from IPFS for now
     logging.log('serve from IPFS');
-    return bodyUrl(`ipfs://bafybeihgkts7wihrjksfnwhswugvlj6mv4gfsxdgedr3iy2vlcvapz5vmy${request.path}`);
+    return bodyUrl(`${storage.getString(WEB4_STATIC_URL_KEY)!}${request.path}`);
 }
