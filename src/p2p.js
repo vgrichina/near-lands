@@ -12,8 +12,8 @@ import { CONTRACT_NAME } from './near';
 const PUBLIC_KEY_BYTES = 1 + 32;
 const SIGNATURE_BYTES = PUBLIC_KEY_BYTES + 64;
 
-const MAX_PEERS = 10;
-const GOSSIP_PEERS = 5;
+const MAX_PEERS = 7;
+const GOSSIP_PEERS = 3;
 
 const MAX_SEND_PAUSE_MS = 3000;
 
