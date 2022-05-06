@@ -28,4 +28,5 @@ jobs:
         cache: 'yarn'
     - run: yarn
     - run: yarn build
+    - run: cd contract && yarn
     - run: yarn build:contract:debug
