@@ -1,13 +1,14 @@
 import { connect, WalletConnection, keyStores, Contract, Account } from 'near-api-js';
 
-export const CONTRACT_NAME = process.env.CONTRACT_NAME || 'lands.near';
+const config = require('./config')(process.env.NODE_ENV);
+export const CONTRACT_NAME = config.contractName;
 
 export async function connectNear() {
     const APP_KEY_PREFIX = 'near-lands:'
     const near = await connect({
-        nodeUrl: process.env.NODE_URL || 'https://rpc.mainnet.near.org',
-        walletUrl: 'https://wallet.near.org',
-        networkId: 'default',
+        ...config,
+        // NOTE: Workaround needed for previously logged in users
+        networkId: config.networkId == 'mainnet' ? 'default' : config.networkId,
         keyStore: new keyStores.BrowserLocalStorageKeyStore(window.localStorage, APP_KEY_PREFIX)
     })
     const walletConnection = new WalletConnection(near, APP_KEY_PREFIX)
@@ -16,10 +17,10 @@ export async function connectNear() {
     if (walletConnection.isSignedIn()) {
         account = walletConnection.account();
     } else {
-        account = new Account(near.connection, CONTRACT_NAME);
+        account = new Account(near.connection, config.contractName);
     }
 
-    const contract = new Contract(account, CONTRACT_NAME, {
+    const contract = new Contract(account, config.contractName, {
         changeMethods: ["setTiles"],
         sender: account.accountId
     });

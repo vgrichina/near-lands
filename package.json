@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "NEAR Lands",
   "scripts": {
+    "prebuild": "rm -rf dist/* .parcel-cache",
     "build": "parcel build index.html --dist-dir dist/",
     "postbuild": "cp -R static/* dist/",
     "start": "parcel index.html",
@@ -10,7 +11,7 @@
     "build:contract:debug": "cd contract && npm run build:debug",
     "dev:deploy:contract": "near dev-deploy --wasmFile contract/build/debug/lands.wasm",
     "deploy:contract": "near deploy --wasmFile contract/build/release/lands.wasm --accountId lands.near",
-    "deploy:ipfs": "npm run build && rm -f dist/*.map && ipfs-deploy dist/",
+    "deploy:static": "npm run build && rm -f dist/*.map && node scripts/static-deploy.js",
     "deploy": "npm run build:contract && npm run deploy:contract"
   },
   "repository": {
