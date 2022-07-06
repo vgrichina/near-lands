@@ -1,4 +1,5 @@
 import { storage, u128, util, logging, context } from "near-sdk-as";
+import { generatePNG } from "./generatepng";
 import * as marketplace from "./marketplace";
 
 import { Chunk, ChunkMap, TileInfo, LandParcel, CHUNK_SIZE, CHUNK_COUNT, PARCEL_COUNT } from "./model"
@@ -55,6 +56,21 @@ function renderChunk(x: i32, y: i32): string {
         }
     }
     return pieces.join('\n');
+}
+
+export function renderChunkPNG(x: i32, y: i32): Uint8Array {
+    // TODO: Use actual data like renderChunk / renderParcel
+    let pixelData: u8[] = [];
+    for (let y = 0; y < CHUNK_SIZE; y++) {
+        for (let x = 0; x < CHUNK_SIZE; x++) {
+            pixelData.push(0xFF);
+            pixelData.push(0x00);
+            pixelData.push(0xFF);
+            pixelData.push(0xFF);
+        }
+    }
+    let encodedData = generatePNG(CHUNK_SIZE, CHUNK_SIZE, pixelData);
+    return Uint8Array.wrap(encodedData.buffer);
 }
 
 function renderParcel(x: i32, y: i32): string {
