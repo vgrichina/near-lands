@@ -4,7 +4,7 @@ import * as marketplace from "./marketplace";
 
 import { Chunk, ChunkMap, TileInfo, LandParcel, CHUNK_SIZE, CHUNK_COUNT, PARCEL_COUNT } from "./model"
 
-import { Web4Request, Web4Response, bodyUrl, svgResponse, htmlResponse } from "./web4";
+import { Web4Request, Web4Response, bodyUrl, svgResponse, htmlResponse, pngResponse } from "./web4";
 
 export function getLandParcelRange(x: i32, y: i32, width: i32, height: i32): LandParcel[] {
     return marketplace.getLandParcelRange(x, y, width, height);
@@ -58,18 +58,42 @@ function renderChunk(x: i32, y: i32): string {
     return pieces.join('\n');
 }
 
-export function renderChunkPNG(x: i32, y: i32): Uint8Array {
-    // TODO: Use actual data like renderChunk / renderParcel
+function renderParcelPNG(x: i32, y: i32): Uint8Array {
     let pixelData: u8[] = [];
-    for (let y = 0; y < CHUNK_SIZE; y++) {
-        for (let x = 0; x < CHUNK_SIZE; x++) {
-            pixelData.push(0xFF);
-            pixelData.push(0x00);
-            pixelData.push(0xFF);
-            pixelData.push(0xFF);
+    let chunks: Chunk[][] = [];
+    for (let j = 0; j < CHUNK_COUNT; j++) {
+        chunks.push([]);
+        for (let i = 0; i < CHUNK_COUNT; i++) {
+            chunks[j].push(Chunk.get(i + x * CHUNK_COUNT, j + y * CHUNK_COUNT));
         }
     }
-    let encodedData = generatePNG(CHUNK_SIZE, CHUNK_SIZE, pixelData);
+
+    for (let j = 0; j < CHUNK_COUNT; j++) {
+        for (let y = 0; y < CHUNK_SIZE; y++) {
+            for (let i = 0; i < CHUNK_COUNT; i++) {
+                for (let x = 0; x < CHUNK_SIZE; x++) {
+                    const tileId = util.parseFromString<i32>(chunks[j][i].tiles[x][y]);
+                    let fillColor: u32 = 0x0;
+
+                    if (tileId >= 48 && tileId < 66) {
+                        fillColor = 0x477f3f;
+                    } else if (tileId >= 66 && tileId < 66 + 18) {
+                        fillColor = 0x336a95;
+                    } else if ([30, 31, 37, 38, 39, 45, 46, 47].includes(tileId)) {
+                        fillColor = 0x7a715f;
+                    } else if (tileId > 0) {
+                        fillColor = 0xf8d29c;
+                    }
+
+                    pixelData.push((fillColor >> 16 & 0xFF) as u8);
+                    pixelData.push((fillColor >> 8 & 0xFF) as u8);
+                    pixelData.push((fillColor & 0xFF) as u8);
+                    pixelData.push(0xFF);
+                }
+            }
+        }
+    }
+    let encodedData = generatePNG(CHUNK_COUNT * CHUNK_SIZE, CHUNK_COUNT * CHUNK_SIZE, pixelData);
     return Uint8Array.wrap(encodedData.buffer);
 }
 
@@ -118,6 +142,18 @@ export function web4_get(request: Web4Request): Web4Response {
         </svg>`);
     }
 
+    if (request.path.startsWith('/parcel-png')) {
+        logging.log('serve parcel')
+        const parts = request.path.split('/');
+        assert(parts.length == 3, 'Unrecognized parcel path: ' + request.path);
+
+        const parcelId = parts[2];
+        const parcelCoords = parcelId.split(',');
+        assert(parcelCoords.length == 2, 'Unrecognized parcel ID: ' + parcelId);
+
+        return pngResponse(renderParcelPNG(util.parseFromString<i32>(parcelCoords[0]), util.parseFromString<i32>(parcelCoords[1])));
+    }
+
     if (request.path.startsWith('/parcel')) {
         logging.log('serve parcel')
         const parts = request.path.split('/');
@@ -145,7 +181,7 @@ export function web4_get(request: Web4Request): Web4Response {
         for (let j = 0; j < PARCEL_COUNT; j++) {
             lines.push('<div>');
             for (let i = 0; i < PARCEL_COUNT; i++) {
-                lines.push(`<img src="/parcel/${i},${j}">`);
+                lines.push(`<img src="/parcel-png/${i},${j}" width="64" height="64">`);
             }
             lines.push('</div>');
         }

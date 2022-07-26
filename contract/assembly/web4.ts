@@ -84,6 +84,10 @@ export function svgResponse(text: string): Web4Response {
     return { contentType: 'image/svg+xml; charset=UTF-8', body: util.stringToBytes(text) };
 }
 
+export function pngResponse(data: Uint8Array): Web4Response {
+    return { contentType: 'image/png', body: data };
+}
+
 export function preloadUrls(urls: string[]): Web4Response {
     return { preloadUrls: urls };
 }
