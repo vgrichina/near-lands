@@ -179,10 +179,12 @@ export function web4_get(request: Web4Request): Web4Response {
     if (request.path.startsWith('/minimap')) {
         const lines: string[] = [];
         for (let j = 0; j < PARCEL_COUNT; j++) {
-            lines.push('<div>');
+            lines.push('<div style="padding: 0; margin: 0;">');
+            let line: string[] = []''
             for (let i = 0; i < PARCEL_COUNT; i++) {
-                lines.push(`<img src="/parcel/${i},${j}" width="64" height="64">`);
+                line.push(`<img src="/parcel/${i},${j}" width="128" height="128" style="padding: 0; margin: 0; image-rendering: crisp-edges;">`);
             }
+            lines.push(line.join('')); // NOTE: Avoid whitespace between <img>
             lines.push('</div>');
         }
         return htmlResponse(lines.join('\n'));
