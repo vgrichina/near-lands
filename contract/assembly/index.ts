@@ -142,7 +142,7 @@ export function web4_get(request: Web4Request): Web4Response {
         </svg>`);
     }
 
-    if (request.path.startsWith('/parcel-png')) {
+    if (request.path.startsWith('/parcel')) {
         logging.log('serve parcel')
         const parts = request.path.split('/');
         assert(parts.length == 3, 'Unrecognized parcel path: ' + request.path);
@@ -154,7 +154,7 @@ export function web4_get(request: Web4Request): Web4Response {
         return pngResponse(renderParcelPNG(util.parseFromString<i32>(parcelCoords[0]), util.parseFromString<i32>(parcelCoords[1])));
     }
 
-    if (request.path.startsWith('/parcel')) {
+    if (request.path.startsWith('/parcel-svg')) {
         logging.log('serve parcel')
         const parts = request.path.split('/');
         assert(parts.length == 3, 'Unrecognized parcel path: ' + request.path);
@@ -181,7 +181,7 @@ export function web4_get(request: Web4Request): Web4Response {
         for (let j = 0; j < PARCEL_COUNT; j++) {
             lines.push('<div>');
             for (let i = 0; i < PARCEL_COUNT; i++) {
-                lines.push(`<img src="/parcel-png/${i},${j}" width="64" height="64">`);
+                lines.push(`<img src="/parcel/${i},${j}" width="64" height="64">`);
             }
             lines.push('</div>');
         }
