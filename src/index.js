@@ -14,12 +14,14 @@ import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin'
 import sendJson from 'fetch-send-json';
 
 import { connectP2P } from './p2p'
-import { connectNear, CONTRACT_NAME } from './near'
+import { CONTRACT_NAME, login, logout, isSignedIn, getAccountId, getWallet, getWalletSelector } from './near'
 import * as audioChat from './audio-chat'
 import { debounce } from './utils';
 
 import { Player, UPDATE_DELTA } from './player'
 import { UIScene } from './ui';
+
+import "@near-wallet-selector/modal-ui/styles.css";
 
 const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
 const SET_TILE_BATCH_SIZE = 10;
@@ -27,23 +29,7 @@ const DEBUG = false;
 
 const WEB4_URL = process.env.WEB4_URL || '';
 
-const connectPromise = connectNear();
-
 const accountIdToPlayer = {};
-async function login() {
-    const { walletConnection } = await connectPromise;
-
-    walletConnection.requestSignIn(CONTRACT_NAME);
-}
-
-async function logout() {
-    const { walletConnection } = await connectPromise;
-
-    localStorage.removeItem('peerId');
-    walletConnection.signOut();
-    window.location.reload();
-}
-
 const CHUNK_SIZE = 16;
 const CHUNK_COUNT = 4;
 const PARCEL_COUNT = 8;
@@ -64,7 +50,6 @@ async function loadParcels() {
 
     try {
         parcelsLoading = true;
-        const { contract } = await connectPromise;
 
         const scene = game.scene.getScene('GameScene');
         const { scrollX, scrollY, displayWidth, displayHeight } = scene.cameras.main;
@@ -96,8 +81,6 @@ async function loadParcels() {
 const CHUNK_PRELOAD_RATIO = 0.25;
 const VELOCITY_RATIO = 1 / 250;
 async function loadChunksIfNeeded() {
-    const { contract } = await connectPromise;
-
     const scene = game.scene.getScene('GameScene');
     const { scrollX, scrollY, displayWidth, displayHeight } = scene.cameras.main;
 
@@ -166,8 +149,6 @@ function updateError(e) {
 }
 
 async function setNextPixel() {
-    const { contract } = await connectPromise;
-
     try {
         if (setTileQueue.length == 0) {
             return;
@@ -185,7 +166,20 @@ async function setNextPixel() {
         }
 
         console.debug('setTiles', setTileBatch);
-        await contract.setTiles({ tiles: setTileBatch }, SET_TILE_GAS);
+        const wallet = await getWallet();
+        await wallet.signAndSendTransaction({
+            signerId: getAccountId(),
+            actions: [
+              {
+                type: 'FunctionCall',
+                params: {
+                  methodName: 'setTiles',
+                  args: { tiles: setTileBatch },
+                  gas: SET_TILE_GAS
+                },
+              },
+            ],
+        });
     } catch (e) {
         updateError(e);
         updateChunk(Math.floor(setTileBatch[0].x / CHUNK_SIZE), Math.floor(setTileBatch[0].y / CHUNK_SIZE));
@@ -195,7 +189,6 @@ async function setNextPixel() {
         setTimeout(() => setNextPixel(), 50);
     };
 }
-setNextPixel();
 
 const UI_DEPTH = Number.MAX_SAFE_INTEGER - 100; // NOTE: On top of everything, but leave room for more layers
 
@@ -277,6 +270,13 @@ class GameScene extends Phaser.Scene
         this.marker.strokeRect(0, 0, this.mainMap.tileWidth, this.mainMap.tileHeight);
     }
 
+    createOrUpdatePlayer(x, y) {
+        if (this.player) {
+            this.player.destroy();
+        }
+        this.player = this.add.player({ scene: this, x, y, accountId: getAccountId(), controlledByUser: true });
+    }
+
     create() {
         this.input.addPointer(2);
 
@@ -331,7 +331,11 @@ class GameScene extends Phaser.Scene
         if (hash) {
             [x, y] = hash.substring(1).split(',').map(s => parseFloat(s) * TILE_SIZE_PIXELS);
         }
-        this.player = this.add.player({ scene: this, x, y, accountId: account.accountId, controlledByUser: true });
+
+        this.createOrUpdatePlayer(x, y);
+        getWalletSelector().then((selector) => {
+            selector.store.observable.subscribe(() => this.createOrUpdatePlayer(this.player.x, this.player.y));
+        });
 
         const roundPixels = true;
         this.cameras.main.startFollow(this.player, roundPixels);
@@ -378,7 +382,7 @@ class GameScene extends Phaser.Scene
             if (this.shiftKey.isDown || sourceMap == this.inventoryMap) {
                 this.selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
             } else if (sourceMap == this.mainMap) {
-                if (!walletConnection.isSignedIn()) {
+                if (!isSignedIn()) {
                     updateError('You need to login to draw');
                     return;
                 }
@@ -625,7 +629,7 @@ function updatePutTileQueue() {
 }
 
 async function onLocationUpdate({ accountId, x, y, frame, animName, animProgress, layers }) {
-    if (accountId && accountId == account.accountId) {
+    if (accountId && accountId == getAccountId())  {
         return;
     }
 
@@ -639,7 +643,6 @@ async function onLocationUpdate({ accountId, x, y, frame, animName, animProgress
 
 let p2pPromise
 async function connectP2PIfNeeded() {
-    const { contract } = await connectPromise;
     if (!p2pPromise) {
         p2pPromise = connectP2P({ account: contract.account });
     }
@@ -648,7 +651,7 @@ async function connectP2PIfNeeded() {
 
 async function publishLocation() {
     try {
-        const p2p = await connectP2PIfNeeded();
+        // const p2p = await connectP2PIfNeeded();
 
         const scene = game.scene.getScene('GameScene');
         if (!scene || !scene.player) {
@@ -658,33 +661,34 @@ async function publishLocation() {
         const { x, y, playerSprites } = scene.player;
         const [{ anims, ...playerSprite }] = playerSprites;
         const layers = playerSprites.map(sprite => sprite.texture.key);
-        p2p.publishLocation({
-            x,
-            y,
-            frame: playerSprite.frame.name,
-            animName: anims.isPlaying && anims.getName().replace(/:.+$/, ''),
-            animProgress: anims.getProgress(),
-            // TODO: Throttle layers transmission to save bandwidth?
-            layers
-        });
+        // p2p.publishLocation({
+        //     x,
+        //     y,
+        //     frame: playerSprite.frame.name,
+        //     animName: anims.isPlaying && anims.getName().replace(/:.+$/, ''),
+        //     animProgress: anims.getProgress(),
+        //     // TODO: Throttle layers transmission to save bandwidth?
+        //     layers
+        // });
     } finally {
         setTimeout(publishLocation, UPDATE_DELTA);
     }
 };
 publishLocation();
 
-(async () => {
-    const p2p = await connectP2PIfNeeded();
-    if (!p2p) {
-        console.error("Couldn't subscribe to location updates");
-        return;
-    }
-    p2p.subscribeToLocation(onLocationUpdate);
+setNextPixel();
 
-    const { walletConnection } = await connectPromise;
-    if (walletConnection.isSignedIn()) {
-        await audioChat.join(walletConnection.getAccountId());
-    }
+(async () => {
+    // const p2p = await connectP2PIfNeeded();
+    // if (!p2p) {
+    //     console.error("Couldn't subscribe to location updates");
+    //     return;
+    // }
+    // p2p.subscribeToLocation(onLocationUpdate);
+
+    // if (isSignedIn()) {
+    //     await audioChat.join(getAccountId());
+    // }
 })().catch(console.error);
 
 Object.assign(window, { login, logout, game, onLocationUpdate, publishLocation });
