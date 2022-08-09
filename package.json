@@ -5,7 +5,9 @@
   "scripts": {
     "prebuild": "rm -rf dist/* .parcel-cache",
     "build": "parcel build index.html --dist-dir dist/",
-    "postbuild": "cp -R static/* dist/",
+    "copy-assets": "mkdir -p dist/assets && cp -R static/* dist/ && cp -R node_modules/@near-wallet-selector/*/assets/* dist/assets/",
+    "postbuild": " npm run copy-assets",
+    "prestart": "npm run copy-assets",
     "start": "parcel index.html",
     "build:contract": "cd contract && npm run build:release",
     "build:contract:debug": "cd contract && npm run build:debug",

@@ -3,7 +3,7 @@ const web4 = require('web4-near')
 
 module.exports = function (app) {
     // Use static middleware
-    app.use(serveStatic('static'))
+    app.use(serveStatic('dist'))
 
     // Proxy to web4
     const web4Callback = web4.callback();
