@@ -1,8 +1,8 @@
-# Phaser 3 Decentralized Multiplayer Game Project Template
-
-A Phaser 3 project template with ES6 support via [Babel 7](https://babeljs.io/) and [Parcel](https://v2.parceljs.org) that includes hot-reloading for development and production-ready builds.
+# NEAR Lands
 
 This project demonstrates how you can use [NEAR blockchain](https://near.org) for user accounts, storage and turn-based game logic. It also demonstrates usage of [simple-peer](https://github.com/feross/simple-peer) to enable real time peer to peer communication between users (used to share location of every user).
+
+It also allows users who are close by on the map to communicate via voice chat.
 
 ## Requirements
 
@@ -53,6 +53,39 @@ Check out https://v2.parceljs.org/ for documentation on how to customize configu
 
 ## Deploying Code
 
-After you run the `npm run build` command, your code will be built in the `dist/` folder along with any other assets you project depended. 
+After you run the `npm run build` command, frontend code will be built in the `dist/` folder along with any other assets you project depended. 
 
-If you put the contents of the `dist` folder in a publicly-accessible location (say something like `http://mycoolserver.com`), you should be able to open `http://mycoolserver.com/index.html` and play your game.
+To deploy frontend code using [web4](https://github.com/vgrichina/web4) you can use `npm run deploy:static`. You can set target contract name in `src/config.js` file or through `CONTRACT_NAME` environment variable. This is using [`web4-deploy`](https://github.com/vgrichina/web4-deploy) to upload static files to IPFS, pin it and update the hash addrssed by the smart contract.
+
+Note that smart contract needs to be already deployed on the given account using `npm run deploy`. 
+
+Deploying on account like `lands.near` results in corresponding `.near.page` website like https://lands.near.page.
+
+## Roadmap
+
+-  Game features
+  - [ ] NFT gallery support (custom images placed inside world)
+  - [ ] Portal support (world coordinates)
+  - [ ] Portal support (websites)
+  - [ ] Music/sound source support 
+  - [ ] Grouped UI for build material selection
+  - [ ] Quick access bar for material selection
+  - [ ] Larger choice of building materials
+  - [ ] Trade tokens with users you are closed by (like in Civilization, etc)
+  - [ ] Load land content from custom smart contract 
+  - [ ] Interact with smart contracts through in game items
+
+- Land sale
+  - [ ] Own land parcel as NFT
+  - [ ] Enforce restrictions on other users on your parcel
+
+- Voice chat
+  - [ ] Push to talk to limit bandwidth and noise
+  - [ ] Experiment with adjusting pan in spatial audio
+  - [ ] Use multiple rooms to scale?
+  - [ ] Use server-side mixing to scale? (estimate how much gonna cost to operate)
+
+- Future direction
+  - Multiple interconnected worlds
+  - Native mobile apps
+
