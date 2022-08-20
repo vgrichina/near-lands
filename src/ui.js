@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 
 import * as voiceChat from './audio-chat';
+import { isSignedIn } from './near';
 
 export class UIScene extends Phaser.Scene {
     constructor() {
@@ -27,7 +28,7 @@ export class UIScene extends Phaser.Scene {
             this.loginButton.destroy();
             this.loginButton = null;
         }
-        if (walletConnection.isSignedIn()) {
+        if (isSignedIn()) {
             this.logoutButton = this.createButton('Logout', 'logout');
             this.logoutButton.setScrollFactor(0);
             this.logoutButton.setDepth(Number.MAX_VALUE);
@@ -67,7 +68,7 @@ export class UIScene extends Phaser.Scene {
         if (this.toggleAudioButton) {
             this.toggleAudioButton.destroy();
         }
-        if (walletConnection.isSignedIn()) {
+        if (isSignedIn()) {
             this.toggleMicButton = this.createButton(getToggleMicButtonText(), 'unmute');
             this.toggleMicButton.on('pointerup', async () => {
                 if (voiceChat.isMicEnabled()) {

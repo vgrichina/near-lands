@@ -1,4 +1,5 @@
 import { connect, WalletConnection, keyStores, Contract, Account } from 'near-api-js';
+import Cookies from 'js-cookie'
 
 const config = require('./config')(process.env.NODE_ENV);
 export const CONTRACT_NAME = config.contractName;
@@ -30,3 +31,10 @@ export async function connectNear() {
     return result;
 }
 
+export function isSignedIn() {
+    return !!Cookies.get('web4_account_id');
+}
+
+export function getAccountId() {
+    return Cookies.get('web4_account_id') || CONTRACT_NAME;
+}

@@ -14,7 +14,7 @@ import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin'
 import sendJson from 'fetch-send-json';
 
 import { connectP2P } from './p2p'
-import { connectNear, CONTRACT_NAME } from './near'
+import { connectNear, CONTRACT_NAME, getAccountId, isSignedIn } from './near'
 import * as audioChat from './audio-chat'
 import { debounce } from './utils';
 
@@ -31,17 +31,11 @@ const connectPromise = connectNear();
 
 const accountIdToPlayer = {};
 async function login() {
-    const { walletConnection } = await connectPromise;
-
-    walletConnection.requestSignIn(CONTRACT_NAME);
+    window.location = '/web4/login';
 }
 
 async function logout() {
-    const { walletConnection } = await connectPromise;
-
-    localStorage.removeItem('peerId');
-    walletConnection.signOut();
-    window.location.reload();
+    window.location = '/web4/logout';
 }
 
 const CHUNK_SIZE = 16;
@@ -64,7 +58,6 @@ async function loadParcels() {
 
     try {
         parcelsLoading = true;
-        const { contract } = await connectPromise;
 
         const scene = game.scene.getScene('GameScene');
         const { scrollX, scrollY, displayWidth, displayHeight } = scene.cameras.main;
@@ -96,8 +89,6 @@ async function loadParcels() {
 const CHUNK_PRELOAD_RATIO = 0.25;
 const VELOCITY_RATIO = 1 / 250;
 async function loadChunksIfNeeded() {
-    const { contract } = await connectPromise;
-
     const scene = game.scene.getScene('GameScene');
     const { scrollX, scrollY, displayWidth, displayHeight } = scene.cameras.main;
 
@@ -166,8 +157,6 @@ function updateError(e) {
 }
 
 async function setNextPixel() {
-    const { contract } = await connectPromise;
-
     try {
         if (setTileQueue.length == 0) {
             return;
@@ -185,7 +174,8 @@ async function setNextPixel() {
         }
 
         console.debug('setTiles', setTileBatch);
-        await contract.setTiles({ tiles: setTileBatch }, SET_TILE_GAS);
+        await sendJson('POST', `${WEB4_URL}/web4/contract/${CONTRACT_NAME}/setTiles`, { tiles: setTileBatch });
+        // await contract.setTiles({ tiles: setTileBatch }, SET_TILE_GAS);
     } catch (e) {
         updateError(e);
         updateChunk(Math.floor(setTileBatch[0].x / CHUNK_SIZE), Math.floor(setTileBatch[0].y / CHUNK_SIZE));
@@ -195,7 +185,6 @@ async function setNextPixel() {
         setTimeout(() => setNextPixel(), 50);
     };
 }
-setNextPixel();
 
 const UI_DEPTH = Number.MAX_SAFE_INTEGER - 100; // NOTE: On top of everything, but leave room for more layers
 
@@ -331,7 +320,7 @@ class GameScene extends Phaser.Scene
         if (hash) {
             [x, y] = hash.substring(1).split(',').map(s => parseFloat(s) * TILE_SIZE_PIXELS);
         }
-        this.player = this.add.player({ scene: this, x, y, accountId: account.accountId, controlledByUser: true });
+        this.player = this.add.player({ scene: this, x, y, accountId: getAccountId(), controlledByUser: true });
 
         const roundPixels = true;
         this.cameras.main.startFollow(this.player, roundPixels);
@@ -378,7 +367,7 @@ class GameScene extends Phaser.Scene
             if (this.shiftKey.isDown || sourceMap == this.inventoryMap) {
                 this.selectedTile = sourceMap.getTileAt(pointerTileX, pointerTileY);
             } else if (sourceMap == this.mainMap) {
-                if (!walletConnection.isSignedIn()) {
+                if (!isSignedIn()) {
                     updateError('You need to login to draw');
                     return;
                 }
@@ -672,6 +661,7 @@ async function publishLocation() {
     }
 };
 publishLocation();
+setNextPixel();
 
 (async () => {
     const p2p = await connectP2PIfNeeded();
@@ -681,9 +671,8 @@ publishLocation();
     }
     p2p.subscribeToLocation(onLocationUpdate);
 
-    const { walletConnection } = await connectPromise;
-    if (walletConnection.isSignedIn()) {
-        await audioChat.join(walletConnection.getAccountId());
+    if (isSignedIn()) {
+        await audioChat.join(getAccountId());
     }
 })().catch(console.error);
 

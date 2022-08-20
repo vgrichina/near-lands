@@ -34,6 +34,7 @@
   "dependencies": {
     "agora-rtc-sdk-ng": "^4.6.3",
     "fetch-send-json": "^0.0.2",
+    "js-cookie": "^3.0.1",
     "near-api-js": "^0.42.0",
     "noble-ed25519": "^1.2.5",
     "phaser": "^3.50.0",
