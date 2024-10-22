@@ -8,6 +8,7 @@ import { PublicKey } from 'near-api-js/lib/utils';
 import { sha256 } from 'js-sha256'
 
 import { CONTRACT_NAME } from './near'; 
+import fetchSendJson from 'fetch-send-json';
 
 const PUBLIC_KEY_BYTES = 1 + 32;
 const SIGNATURE_BYTES = PUBLIC_KEY_BYTES + 64;
@@ -17,15 +18,16 @@ const GOSSIP_PEERS = 3;
 
 const MAX_SEND_PAUSE_MS = 3000;
 
+// TODO: Make this available via web4 endpoint, switch automatically to testnet if needed
+const FAST_NEAR_API_URL =  process.env.FAST_NEAR_API_URL || 'https://rpc.web4.near.page';
+
 const cachedHasMatchingKey = {};
 const lastSeenNonce = {};
 
 let lastSendTime;
 let lastLocationData;
 
-export async function connectP2P({ account }) {
-    let { accountId, connection: { signer, provider, networkId } } = account;
-
+export async function connectP2P({ networkId, accountId, signer }) {
     const hub = signalhub('near-lands', [
         'https://signalhub.humanguild.io',
         // TODO: Have some fallbacks
@@ -61,6 +63,8 @@ export async function connectP2P({ account }) {
 
     if (accountId == CONTRACT_NAME) {
         accountId = localStorage.getItem('p2p:guest-account');
+
+        // TODO: Don't rely on keyStore, use InMemorySigner directly
         const { keyStore } = signer;
         if (!accountId || !(await keyStore.getKey(networkId, accountId))) {
             // Generate special key for unauthenticated accounts
@@ -71,12 +75,12 @@ export async function connectP2P({ account }) {
         }
     }
 
-
     // TODO: Support channel subscriptions, route messages through peers?
 
     let locationListeners = [];
     let peers = [];
 
+    console.debug('Connecting to p2p swarm');
     swarm.on('peer', (peer, id) => {
         console.debug('peer connected', peer, id);
         peers.push(peer);
@@ -113,12 +117,9 @@ export async function connectP2P({ account }) {
                 if (message.accountId.startsWith('guest:')) {
                     hasMatchingKey = (guestAccountIdFromPublicKey(publicKey) == message.accountId);
                 } else {
-                    hasMatchingKey = !!(await provider.query({
-                        request_type: 'view_access_key',
-                        account_id: message.accountId,
-                        public_key: publicKey.toString(),
-                        finality: 'optimistic'
-                    }));
+                    const accessKey = await fetchSendJson('GET', `${FAST_NEAR_API_URL}/account/${message.accountId}/key/${publicKey.toString()}`);
+                    hasMatchingKey = !!accessKey;
+                    console.log('accessKey', accessKey);
                 }
                 cachedHasMatchingKey[keyId] = hasMatchingKey;
             }

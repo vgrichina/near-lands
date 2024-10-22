@@ -14,7 +14,7 @@ import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin'
 import sendJson from 'fetch-send-json';
 
 import { connectP2P } from './p2p'
-import { connectNear, CONTRACT_NAME, getAccountId, isSignedIn } from './near'
+import { CONTRACT_NAME, getAccountId, isSignedIn, getSigner, networkId } from './near'
 import * as audioChat from './audio-chat'
 import { debounce } from './utils';
 
@@ -24,10 +24,6 @@ import { UIScene } from './ui';
 const SET_TILE_GAS = 120 * 1000 * 1000 * 1000 * 1000;
 const SET_TILE_BATCH_SIZE = 10;
 const DEBUG = false;
-
-const WEB4_URL = process.env.WEB4_URL || '';
-
-const connectPromise = connectNear();
 
 const accountIdToPlayer = {};
 async function login() {
@@ -69,7 +65,7 @@ async function loadParcels() {
         for (let parcelX = startX; parcelX < endX; parcelX++) {
             for (let parcelY = startY; parcelY < endY; parcelY++) {
                 const parcelNonces = await sendJson('GET',
-                    `${WEB4_URL}/web4/contract/${CONTRACT_NAME}/getParcelNonces?x.json=${parcelX}&y.json=${parcelY}`);
+                    `/web4/contract/${CONTRACT_NAME}/getParcelNonces?x.json=${parcelX}&y.json=${parcelY}`);
 
                 for (let i = 0; i < parcelNonces.length; i++) {
                     for (let j = 0; j < parcelNonces[i].length; j++) {
@@ -81,6 +77,11 @@ async function loadParcels() {
 
         // Throttle
         await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (e) {
+        console.warn('Error loading parcels', e);
+
+        // Throttle retries
+        await new Promise((resolve) => setTimeout(resolve, 5000));
     } finally {
         parcelsLoading = false;
     }
@@ -108,14 +109,19 @@ async function loadChunksIfNeeded() {
                 console.debug('nonce mismatch for chunk', i, j, nonce, nonceMap[i][j], );
                 fullMap[i][j] = { ...fullMap[i][j], loading: true };
                 // NOTE: no await on purpose
-                await sendJson('GET', `${WEB4_URL}/web4/contract/${CONTRACT_NAME}/getChunk?x.json=${i}&y.json=${j}`)
+                sendJson('GET', `/web4/contract/${CONTRACT_NAME}/getChunk?x.json=${i}&y.json=${j}`)
                     .then(chunk => {
                         fullMap[i][j] = { ...chunk, loading: false };
                         updateChunk(i, j);
                     })
                     .catch(e => {
                         console.warn('Error loading chunk ', i, j, e);
-                        fullMap[i][j] = { ...fullMap[i][j], loading: false };
+
+                        // Throttle retries
+                        return new Promise((resolve) => setTimeout(() => {
+                            fullMap[i][j] = { ...fullMap[i][j], loading: false };
+                            resolve();
+                        }, 5000));
                     });
             }
         }
@@ -174,7 +180,7 @@ async function setNextPixel() {
         }
 
         console.debug('setTiles', setTileBatch);
-        await sendJson('POST', `${WEB4_URL}/web4/contract/${CONTRACT_NAME}/setTiles`, { tiles: setTileBatch });
+        await sendJson('POST', `/web4/contract/${CONTRACT_NAME}/setTiles`, { tiles: setTileBatch });
         // await contract.setTiles({ tiles: setTileBatch }, SET_TILE_GAS);
     } catch (e) {
         updateError(e);
@@ -614,7 +620,7 @@ function updatePutTileQueue() {
 }
 
 async function onLocationUpdate({ accountId, x, y, frame, animName, animProgress, layers }) {
-    if (accountId && accountId == account.accountId) {
+    if (accountId && accountId == getAccountId()) {
         return;
     }
 
@@ -628,9 +634,8 @@ async function onLocationUpdate({ accountId, x, y, frame, animName, animProgress
 
 let p2pPromise
 async function connectP2PIfNeeded() {
-    const { contract } = await connectPromise;
     if (!p2pPromise) {
-        p2pPromise = connectP2P({ account: contract.account });
+        p2pPromise = connectP2P({ accountId: getAccountId(), networkId, signer: getSigner() });
     }
     return await p2pPromise;
 }
